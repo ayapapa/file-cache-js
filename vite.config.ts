@@ -14,6 +14,7 @@ export default defineConfig({
   },
   // Write settings to disable only in the test environment here.
   test: {
+    
     // for long run test
     testTimeout: 30000,
 

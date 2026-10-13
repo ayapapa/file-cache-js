@@ -1,5 +1,5 @@
 {
-  "name": "@ayapapa-npm/file-locking-js",
+  "name": "@ayapapa-npm/file-cache-js",
   "version": "0.1.0-alpha.01",
   "keywords": [
     "node",

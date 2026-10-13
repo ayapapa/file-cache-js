@@ -1,3 +1,3 @@
-	import { FileCache } from './lib/FileCache.ts';
-	export { FileCache };
+	import { FileCache, type Config } from './lib/FileCache.ts';
+	export { FileCache, type Config };
 	export default FileCache;
