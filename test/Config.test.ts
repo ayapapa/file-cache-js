@@ -1,8 +1,6 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FileCache, /*type Config as FileCacheConfig*/ } from '../src/index.ts';
-import { FileCacheError, sleepAsync } from '../src/lib/FileCache.ts';
+import { FileCache, FileCacheError } from '../src/index.ts';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -14,7 +12,7 @@ afterEach(() => {
 
 describe('FileCache', () => {
 
-  it("初期設定", async () => {
+  it("初期設定", () => {
     const cache = new FileCache();
     expect(cache.getConfig()).toMatchObject({
       ttlMs:              10 * 60 * 1000,
@@ -24,11 +22,11 @@ describe('FileCache', () => {
       withLock:           true,
       lockTimeoutMs:      1000,
       lockTtlMs:          1000,
-      purgeProbability:   0.2
+      purgeProbability:   0.1
     })
   });
 
-  it("Min設定", async () => {
+  it("Min設定", () => {
     const cache = new FileCache({
       ttlMs:              -999,
       retriesOnIoErr:     -555,
@@ -67,250 +65,253 @@ describe('FileCache', () => {
     }
   }
 
-  it("null ttlMs", async () => {
+  it("null ttlMs", () => {
     testInvalidConf("ttlMs", null);
   });
 
-  it("undefined ttlMs", async () => {
+  it("undefined ttlMs", () => {
     testInvalidConf("ttlMs", undefined);
   });
 
-  it("string ttlMs", async () => {
+  it("boolean ttlMs", () => {
+    testInvalidConf("ttlMs", true);
+  });
+
+  it("string ttlMs", () => {
     testInvalidConf("ttlMs", "string");
   });
 
-  it("object ttlMs", async () => {
+  it("object ttlMs", () => {
     testInvalidConf("ttlMs", { hoge: 123 });
   });
 
-  it("array ttlMs", async () => {
+  it("array ttlMs", () => {
     testInvalidConf("ttlMs", [ 0, 1, "eee" ]);
   });
 
 
-  it("null retriesOnIoErr", async () => {
+  it("null retriesOnIoErr", () => {
     testInvalidConf("retriesOnIoErr", null);
   });
 
-  it("undefined retriesOnIoErr", async () => {
+  it("undefined retriesOnIoErr", () => {
     testInvalidConf("retriesOnIoErr", undefined);
   });
 
-  it("string retriesOnIoErr", async () => {
+  it("boolean retriesOnIoErr", () => {
+    testInvalidConf("retriesOnIoErr", false);
+  });
+
+  it("string retriesOnIoErr", () => {
     testInvalidConf("retriesOnIoErr", "string");
   });
 
-  it("object retriesOnIoErr", async () => {
+  it("object retriesOnIoErr", () => {
     testInvalidConf("retriesOnIoErr", { hoge: 123 });
   });
 
-  it("array retriesOnIoErr", async () => {
+  it("array retriesOnIoErr", () => {
     testInvalidConf("retriesOnIoErr", [ 0, 1, "eee" ]);
   });
   
 
-  it("null retryIoIntervalMs", async () => {
+  it("null retryIoIntervalMs", () => {
     testInvalidConf("retryIoIntervalMs", null);
   });
 
-  it("undefined retryIoIntervalMs", async () => {
+  it("undefined retryIoIntervalMs", () => {
     testInvalidConf("retryIoIntervalMs", undefined);
   });
 
-  it("string retryIoIntervalMs", async () => {
+  it("boolean retryIoIntervalMs", () => {
+    testInvalidConf("retryIoIntervalMs", true);
+  });
+
+  it("string retryIoIntervalMs", () => {
     testInvalidConf("retryIoIntervalMs", "string");
   });
 
-  it("object retryIoIntervalMs", async () => {
+  it("object retryIoIntervalMs", () => {
     testInvalidConf("retryIoIntervalMs", { hoge: 123 });
   });
 
-  it("array retryIoIntervalMs", async () => {
+  it("array retryIoIntervalMs", () => {
     testInvalidConf("retryIoIntervalMs", [ 0, 1, "eee" ]);
   });
 
 
-  it("null cacheDir", async () => {
+  it("null cacheDir", () => {
     testInvalidConf("cacheDir", null);
   });
 
-  it("undefined cacheDir", async () => {
+  it("undefined cacheDir", () => {
     testInvalidConf("cacheDir", undefined);
   });
 
-  it("number cacheDir", async () => {
+  it("number cacheDir", () => {
     testInvalidConf("cacheDir", 1234);
   });
 
-  it("object cacheDir", async () => {
+  it("boolean cacheDir", () => {
+    testInvalidConf("cacheDir", false);
+  });
+
+  it("object cacheDir", () => {
     testInvalidConf("cacheDir", { hoge: 123 });
   });
 
-  it("array cacheDir", async () => {
+  it("array cacheDir", () => {
     testInvalidConf("cacheDir", [ 0, 1, "eee" ]);
   });
 
 
-  it("null withLock", async () => {
+  it("null withLock", () => {
     testInvalidConf("withLock", null);
   });
 
-  it("undefined withLock", async () => {
+  it("undefined withLock", () => {
     testInvalidConf("withLock", undefined);
   });
 
-  it("number withLock", async () => {
+  it("number withLock", () => {
     testInvalidConf("withLock", 1234);
   });
 
-  it("object withLock", async () => {
+  it("string withLock", () => {
+    testInvalidConf("withLock", "hogehogege");
+  });
+
+  it("object withLock", () => {
     testInvalidConf("withLock", { hoge: 123 });
   });
 
-  it("array withLock", async () => {
+  it("array withLock", () => {
     testInvalidConf("withLock", [ 0, 1, "eee" ]);
   });
 
   
-  it("null lockTimeoutMs", async () => {
+  it("null lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", null);
   });
 
-  it("undefined lockTimeoutMs", async () => {
+  it("undefined lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", undefined);
   });
 
-  it("string lockTimeoutMs", async () => {
+  it("string lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", "hello");
   });
 
-  it("boolean lockTimeoutMs", async () => {
+  it("boolean lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", true);
   });
 
-  it("object lockTimeoutMs", async () => {
+  it("object lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", { hoge: 123 });
   });
 
-  it("array lockTimeoutMs", async () => {
+  it("array lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", [ 0, 1, "eee" ]);
   });
   
 
-  it("null lockTtlMs", async () => {
+  it("null lockTtlMs", () => {
     testInvalidConf("lockTtlMs", null);
   });
 
-  it("undefined lockTtlMs", async () => {
+  it("undefined lockTtlMs", () => {
     testInvalidConf("lockTtlMs", undefined);
   });
 
-  it("string lockTtlMs", async () => {
+  it("string lockTtlMs", () => {
     testInvalidConf("lockTtlMs", "hello");
   });
 
-  it("boolean lockTtlMs", async () => {
+  it("boolean lockTtlMs", () => {
     testInvalidConf("lockTtlMs", true);
   });
 
-  it("object lockTtlMs", async () => {
+  it("object lockTtlMs", () => {
     testInvalidConf("lockTtlMs", { hoge: 123 });
   });
 
-  it("array lockTtlMs", async () => {
+  it("array lockTtlMs", () => {
     testInvalidConf("lockTtlMs", [ 0, 1, "eee" ]);
   });
 
   
-  it("null purgeProbability", async () => {
+  it("null purgeProbability", () => {
     testInvalidConf("purgeProbability", null);
   });
 
-  it("undefined purgeProbability", async () => {
+  it("undefined purgeProbability", () => {
     testInvalidConf("purgeProbability", undefined);
   });
 
-  it("string purgeProbability", async () => {
+  it("string purgeProbability", () => {
     testInvalidConf("purgeProbability", "hello");
   });
 
-  it("boolean purgeProbability", async () => {
+  it("boolean purgeProbability", () => {
     testInvalidConf("purgeProbability", true);
   });
 
-  it("object purgeProbability", async () => {
+  it("object purgeProbability", () => {
     testInvalidConf("purgeProbability", { hoge: 123 });
   });
 
-  it("array purgeProbability", async () => {
+  it("array purgeProbability", () => {
     testInvalidConf("purgeProbability", [ 0, 1, "eee" ]);
   });
-/*
-       purgeProbability:   0.2
-*/
   
-  async function testPutAndTest(key: string, value: unknown) {
-    const cache = new FileCache();
-    await cache.put(key, value);
-    expect.assertions(1);
-    try {
-      if (value == null || typeof value === "number" || typeof value === "string")
-        expect(await cache.get(key)).toBe(value);
-      else
-        expect(await cache.get(key)).toMatchObject(value);
-    }
-    catch (err) {
-      console.log(err);
-    }
-  }
 
-  it("キャッシュput&get(object).", async () => {
-    const key = "FileCache_putget_object";
-    const value = { test: 1, hoge: "hello" };
-    await testPutAndTest(key, value);
+  it("null removeInvalid", () => {
+    testInvalidConf("removeInvalid", null);
   });
 
-  it("キャッシュput&get(number).", async () => {
-    const key = "FileCache_putget_number";
-    const value = 1009;
-    await testPutAndTest(key, value);
+  it("undefined removeInvalid", () => {
+    testInvalidConf("removeInvalid", undefined);
   });
 
-  it("キャッシュput&get(string).", async () => {
-    const key = "FileCache_putget_string";
-    const value = "wao!!";
-    await testPutAndTest(key, value);
+  it("string removeInvalid", () => {
+    testInvalidConf("removeInvalid", "hello");
   });
 
-  it("キャッシュput&get(array).", async () => {
-    const key = "FileCache_putget_array";
-    const value = ["wao!!", 1234];
-    await testPutAndTest(key, value);
+  it("number removeInvalid", () => {
+    testInvalidConf("removeInvalid", 9099);
   });
 
-  it("キャッシュput&get(null).", async () => {
-    const key = "FileCache_putget_null";
-    const value = null;
-    await testPutAndTest(key, value);
+  it("object removeInvalid", () => {
+    testInvalidConf("removeInvalid", { hoge: 123 });
   });
 
-  it("キャッシュput&get(undefined).", async () => {
-    const key = "FileCache_putget_undefined";
-    const value = undefined;
-    await testPutAndTest(key, value);
+  it("array removeInvalid", () => {
+    testInvalidConf("removeInvalid", [ 0, 1, "eee" ]);
   });
 
-  it("キャッシュput&get(expired).", async () => {
-    const key = "FileCache_putget_expired";
-    const value = "expired";
-    const cache = new FileCache({ ttlMs: 100 });
-    await cache.put(key, value);
-    await sleepAsync(150);
-    expect.assertions(2);
-    expect(await cache.get(key)).toBeUndefined();
-    const cacheDir = cache.getConfig().cacheDir;
-    expect(fs.existsSync(path.join(cacheDir, key))).toBeFalsy();
+
+  it("null removeInvalid", () => {
+    testInvalidConf("removeInvalid", null);
   });
 
+  it("undefined invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", undefined);
+  });
+
+  it("string invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", "hello");
+  });
+
+  it("boolean invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", true);
+  });
+
+  it("object invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", { hoge: 123 });
+  });
+
+  it("array invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", [ 0, 1, "eee" ]);
+  });
 
 });
