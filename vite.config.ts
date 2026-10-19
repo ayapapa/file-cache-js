@@ -21,6 +21,9 @@ export default defineConfig({
     // Asynchronous execution of test files is prohibited.
     fileParallelism: false,
 
+    // Reuses workers across files instead of one per file
+    isolate: false,
+
     // File patterns to exclude
     exclude: [...configDefaults.exclude, 'e2e/*'],
     

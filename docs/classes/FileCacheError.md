@@ -6,7 +6,7 @@
 
 # Class: FileCacheError
 
-Defined in: [src/lib/FileCache.ts:480](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L480)
+Defined in: [src/lib/FileCache.ts:547](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L547)
 
 ## Extends
 
@@ -22,7 +22,7 @@ Defined in: [src/lib/FileCache.ts:480](https://github.com/ayapapa/file-cache-js/
 
 > **new FileCacheError**(`msg`, `param?`): `FileCacheError`
 
-Defined in: [src/lib/FileCache.ts:486](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L486)
+Defined in: [src/lib/FileCache.ts:553](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L553)
 
 コンストラクタ。
 

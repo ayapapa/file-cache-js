@@ -28,7 +28,7 @@ export interface Config {
 
   /**
    * IOエラー時のリトライ間隔(ミリ秒)
-   * Default is `100`. Min is `100`;
+   * Default is `100`. Min is `100`. Min未満はMinに調整される。
    */
   retryIoIntervalMs?: number,
 
@@ -45,19 +45,21 @@ export interface Config {
   /**
    * 排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
    * withLockがtrueのときのみ有効。
+   * Min設定あり。
    */
   lockTimeoutMs?: number;
 
   /**
    * 排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
    * withLockがtrueのときのみ有効。
+   * Min設定あり。
    */
   lockTtlMs?: number;
 
   /**
    * 古いキャッシュの除去を実行する確率（割合）。
    * 例えば、`0.2`を指定した場合は、5回の操作（put, get, remove)で１回の除去が行われる。
-   * Default is `0.1`. Min is `0`.
+   * Default is `0.1`. Min is `0`. Max is `1.0`.　範囲外は、MinまたはMaxに調整される。
    */
   purgeProbability?: number;
 
@@ -82,7 +84,7 @@ export interface Config {
  */
 type Data = {
   value: unknown,
-  expiration: number,
+  expiresAt: number,
 }
 
 /**
@@ -142,31 +144,60 @@ export class FileCache {
    *  Instance mehods. 
    */
 
+  #resolvConf(config: Config) {
+    const rConf = {} as Record<string, unknown>;
+    const defaultConf = FileCache.#defaultConfig as Readonly<Record<string, unknown>>;
+    // 型チェック、範囲チェック、および、null系と未知のプロパティを除外
+    Object.entries(config).forEach(v => {
+      const key = v[0];
+      const value = v[1];
+      if (value != null && defaultConf[key] != null) {
+        // 型チェック
+        REQUIRE(typeof value === typeof defaultConf[key], `Invalid ${key}.`, FileCacheError, { code: 'EINVAL' });
+        let ok = true;
+        if (typeof value === "number") {
+          // 範囲チェック
+          switch (key) {
+            case 'ttlMs':            
+            case 'retryIoIntervalMs':  
+            case 'lockTimeoutMs':      
+            case 'lockTtlMs':          
+            case 'invalidTtlMs':      ok = Number.isFinite(value); break;
+            case 'retriesOnIoErr':    ok = Number.isSafeInteger(value); break;
+            case 'purgeProbability':  ok = Number.isFinite(value)/* && value >= 0 && value <= 1.0*/; break;
+          }
+          REQUIRE(ok, `Invalid ${key}.`, FileCacheError, { code: 'EOUTRANGE' });
+        }
+        // 解決済設定として保存
+        rConf[key] = value;
+      }
+    });
+    return rConf;
+  }
+
   /**
    * 
    * コンストラクタ
    * @param config  設定。
-   * null系(nullまたはundefined)指定じは、省略したもととして扱う。
+   * 指定された値以外はデフォルト設定値になる。
+   * null系(nullまたはundefined)指定時は、省略したもととして扱う。
    */
   constructor(config: Config = FileCache.#defaultConfig) {
-    const rConf = {} as Record<string, unknown>;
-    const defaultConf = FileCache.#defaultConfig as Readonly<Record<string, unknown>>;
-    // 型チェックおよびnull系プロパティ除外
-    Object.entries(config).forEach(v => {
-      if (v[1] != null) {
-        REQUIRE(typeof v[1] === typeof defaultConf[v[0]], `Invalid ${v[0]}.`, FileCacheError, { code: 'EINVAL' });
-        rConf[v[0]] = v[1];
-      }
-    });
-    this.#currentConfig = { ...FileCache.#defaultConfig, ...rConf};
-    this.#currentConfig.ttlMs = Math.max(this.#currentConfig.ttlMs, 0);
-    this.#currentConfig.retriesOnIoErr = Math.max(this.#currentConfig.retriesOnIoErr, 0);
-    this.#currentConfig.retryIoIntervalMs = Math.max(this.#currentConfig.retryIoIntervalMs, 100);
-    this.#currentConfig.lockTimeoutMs = Math.max(this.#currentConfig.lockTimeoutMs, 0);
-    this.#currentConfig.lockTtlMs = Math.max(this.#currentConfig.lockTtlMs, 1000);
-    this.#currentConfig.purgeProbability = Math.max(this.#currentConfig.purgeProbability, 0);
-    this.#currentConfig.cacheDir = this.#getCacheDir();
-    this.#currentConfig.invalidTtlMs = Math.max(this.#currentConfig.invalidTtlMs, 0);
+    if (config === FileCache.#defaultConfig) {
+      this.#currentConfig = { ...FileCache.#defaultConfig };
+    }
+    else {
+      const rConf = this.#resolvConf(config);
+      this.#currentConfig = { ...FileCache.#defaultConfig, ...rConf};
+      this.#currentConfig.ttlMs = Math.max(this.#currentConfig.ttlMs, 0);
+      this.#currentConfig.retriesOnIoErr = Math.max(this.#currentConfig.retriesOnIoErr, 0);
+      this.#currentConfig.retryIoIntervalMs = Math.max(this.#currentConfig.retryIoIntervalMs, 100);
+      this.#currentConfig.lockTimeoutMs = Math.max(this.#currentConfig.lockTimeoutMs, 0);
+      this.#currentConfig.lockTtlMs = Math.max(this.#currentConfig.lockTtlMs, 1000);
+      this.#currentConfig.purgeProbability = Math.min(Math.max(this.#currentConfig.purgeProbability, 0), 1.0);
+      this.#currentConfig.cacheDir = this.#getCacheDir();
+      this.#currentConfig.invalidTtlMs = Math.max(this.#currentConfig.invalidTtlMs, 0);
+    }
   }
 
   public getConfig(): Required<Config> {
@@ -184,18 +215,7 @@ export class FileCache {
   public async get(key: string) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, null, { code: 'EINVAL' });
     return this.#execute(key, async () => {
-      const cached = await this.#get(key) as Data;
-      if (cached) {
-        if (cached.expiration === undefined) {
-          throw new InvalidCache(null, { key, cause: 'No `expiration`' } );
-        }
-        if (cached.expiration === 0 || cached.expiration > Date.now()) {
-          return cached.value;
-        }
-        // 有効期限切れのため削除
-        await this.#remove(key); 
-      }
-      return undefined;
+        return await this.#get(key);
     });
   }
   /**
@@ -205,7 +225,7 @@ export class FileCache {
    * ただし、 不正`cache file`判定は、コンストラクト時の`Config`の`removeInvalid`および`invalidTtlMs`に依存する。(see also `Config`.)
    * @returns 取得に成功した`cache key`と`cache value`({`cache key`: `cache value`})を解決するプロミス。
    */
-  public async getAll(options? : { throwIfInvalid?: true }): Promise<Record<string, unknown>> {
+  public async getAll(options? : { throwIfInvalid?: boolean }): Promise<Record<string, unknown>> {
     const throwIfInvalid = options?.throwIfInvalid ?? false;
     const ret = {} as Record<string, unknown>;
     await this.#forAllKeys(async (key: string) => {
@@ -246,20 +266,47 @@ export class FileCache {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
       const ttlMs = options?.ttlMs ?? this.#currentConfig.ttlMs;
-      const expiration = ttlMs > 0 ? Date.now() + ttlMs : 0;
-      return this.#put(key, { value, expiration: expiration });
+      const expiresAt = ttlMs > 0 ? Date.now() + ttlMs : 0;
+      return this.#put(key, { value, expiresAt });
     }) as Promise<void>;
   }
 
   /**
-   * キーに対応する値を削除する
+   * キーに対応する値を削除する。
+   * 不正キャッシュファイルである場合は、不正ファイル削除設定による（無効判断ならば、削除され`undefined`が返るし、さもなくばエラー。
    * @param key キー
    */
   public async remove(key: string) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
+      if (await this.#get(key) === undefined) return; // no action.
       return this.#remove(key);
     }) as Promise<void>;
+  }
+
+  /**
+   * @internal
+   * ファイルコンテンツを解析し、`cache key`に対応する値を取得する。
+   * @param contents 
+   * @param key 
+   * @returns `cache key`に対応する値、または、`undefined`.
+   * @throws  `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
+   */
+  #parse(contents: string, key: string) {
+    let cached!: Data;
+    try {
+      cached = JSON.parse(contents) as Data;
+    }
+    catch (err) {
+      throw new InvalidCache(null, { key, cause: err });
+    }
+    if (cached.expiresAt === undefined) {
+      throw new InvalidCache(null, { key, cause: 'No `expiresAt`' } );
+    }
+    if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
+      return cached.value; // 有効値
+    }
+    return undefined;
   }
 
   /**
@@ -269,34 +316,47 @@ export class FileCache {
    */
   async #get(key: string) {
     const filePath = this.#getFilePath(key);
-    const contents = await this.#access(() => {
+    const contents = await this.#access(key, () => {
       if (!fs.existsSync(filePath)) return undefined;
       return fs.readFileSync(filePath, 'utf8');
     },
-    "キャッシュデータの読み込みに失敗しました。"
+    "Failed to read `cache file`."
     ) as string | undefined;
-    if (contents !== undefined) {
-      try {
-        return JSON.parse(contents) as Data;
-      }
-      catch (err) {
-        throw new InvalidCache(null, { key, cause: err });
-      }
+    if (contents === undefined) return undefined;
+
+    try {
+      return this.#parse(contents, key);
     }
+    catch (err) {
+      // 不正ファイル削除指示を確認し有効・無効判定
+      let expired = false;
+      if (this.#currentConfig.removeInvalid === true) {
+        // 更新時間をチェックし判定する
+        const stat = await this.#access(
+          key, 
+          () => fs.statSync(this.#getFilePath(key), { throwIfNoEntry: false }),
+          "Failed to get `cache file` information."
+        ) as fs.Stats | undefined;
+        expired = Boolean(stat && stat.mtimeMs + this.#currentConfig.invalidTtlMs <= Date.now())/* && await this.#remove(key)*/
+      }
+      if (expired === false) throw err;
+    }
+    // 有効期限切れのため削除
+    await this.#remove(key); 
     return undefined;
   }
 
   /**
    * キャッシュデータをファイルへ格納する
    * @param {string}  key     キャッシュキー
-   * @param {{value: *, expiration: number}}       value   キャッシュする値
+   * @param {{value: *, expiresAt: number}}       value   キャッシュする値
    * @param {boolean} [retry=false] trueならエラー時に再実行
    */
   async #put(key: string, data: Data): Promise<void> {
-    return this.#access(() => {
+    return this.#access(key, () => {
       fs.writeFileSync(this.#getFilePath(key), JSON.stringify(data, null, "  "));
     },
-    "キャッシュデータの書き込みに失敗しました。"
+    "Failed to write `cache file`."
     ) as Promise<void>;
   }
 
@@ -307,7 +367,7 @@ export class FileCache {
    * @param msg       Error message.
    * @returns 
    */
-  async #access(callback: () => unknown, msg: string) {
+  async #access(key: string | null, callback: () => unknown, msg: string) {
     let retries = this.#currentConfig.retriesOnIoErr;
     const interval = this.#currentConfig.retryIoIntervalMs;
 
@@ -320,9 +380,10 @@ export class FileCache {
           await sleepAsync(interval);
           return exec();
         }
-        let code = 'EIO';
-        err instanceof Error && 'code' in err && (code = String(err.code));
-        throw new FileCacheError(msg, { code, cause: err });
+        const param = { code: 'EIO', cause: err } as { code: string, cause?: unknown, key?: string};
+        err instanceof Error && 'code' in err && (param.code = String(err.code));
+        key !== null && key.length > 0 && (param.key = key);
+        throw new FileCacheError(msg, param);
       }
     }
 
@@ -343,10 +404,11 @@ export class FileCache {
    * @param  key     キャッシュキー
    */
   async #remove(key: string) {
-    return this.#access(() => {
-      fs.unlinkSync(this.#getFilePath(key));
+    const path = this.#getFilePath(key)
+    return this.#access(key, () => {
+      fs.existsSync(path) && fs.unlinkSync(path);
     },
-    "キャッシュデータの削除に失敗しました。"
+    "Failed to remove `cache file`."
     );
   }
 
@@ -359,11 +421,16 @@ export class FileCache {
   async #execute(key: string, callback: () => unknown) {
     await this.#purgeRandom();
     if (this.#currentConfig.withLock) {
-      //const lockKey = '62af9711-f49b-9bab-620e-fbf3055a9707';
-      return await FileLock.withLock(key, callback, { 
-        timeoutMs: this.#currentConfig.lockTimeoutMs,
-        ttlMs: this.#currentConfig.lockTtlMs,
-      });
+      try {
+        return await FileLock.withLock(key, callback, { 
+          timeoutMs: this.#currentConfig.lockTimeoutMs,
+          ttlMs: this.#currentConfig.lockTtlMs,
+        });
+      }
+      catch (err) {
+        if (err instanceof FileCacheError) throw err;
+        else throw new FileCacheError("Failed to acquire the lock.", { code: "ELOCK", key, cause: err });
+      }
     }
     return callback();
   }
@@ -386,11 +453,11 @@ export class FileCache {
     for (const getDir of candidates) {
       // ディレクトリ指定なしなら次
       let dir = getDir();
-      if (!dir) continue;
+      //if (!dir) continue;
       // ディレクトリが存在するなら、それに決定。
       try {
         dir = path.resolve(dir);
-        if (fs.existsSync(dir)) return dir;
+        if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return dir;
         // 無い場合は、ディレクトリを作成できたなら、それに決定。
         fs.mkdirSync(dir, { recursive: true });
         return dir;
@@ -413,9 +480,9 @@ export class FileCache {
   async #getAllKeys() {
     // 全リストを取得する
     const dir = this.#currentConfig.cacheDir;
-    const list = await this.#access(
+    const list = await this.#access(null, 
       () => fs.readdirSync(dir, { withFileTypes: true }), 
-      "キャッシュディレクトリ情報の取得に失敗しました。"
+      "Failed to read `cache directory` information."
     ) as fs.Dirent<string>[];
     return list.filter(item => item.isFile()).map(item =>  path.parse(item.name).name);
   }

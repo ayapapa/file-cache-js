@@ -6,7 +6,7 @@
 
 # Class: FileCache
 
-Defined in: [src/lib/FileCache.ts:98](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L98)
+Defined in: [src/lib/FileCache.ts:100](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L100)
 
 ファイルを使ったキャッシュサービスクラス。
 
@@ -23,7 +23,7 @@ and removing double quotation marks.
 
 > **new FileCache**(`config?`): `FileCache`
 
-Defined in: [src/lib/FileCache.ts:151](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L151)
+Defined in: [src/lib/FileCache.ts:185](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L185)
 
 コンストラクタ
 
@@ -34,7 +34,8 @@ Defined in: [src/lib/FileCache.ts:151](https://github.com/ayapapa/file-cache-js/
 [`Config`](../interfaces/Config.md) = `FileCache.#defaultConfig`
 
 設定。
-null系(nullまたはundefined)指定じは、省略したもととして扱う。
+指定された値以外はデフォルト設定値になる。
+null系(nullまたはundefined)指定時は、省略したもととして扱う。
 
 #### Returns
 
@@ -46,7 +47,7 @@ null系(nullまたはundefined)指定じは、省略したもととして扱う�
 
 > **get**(`key`): `Promise`\<`unknown`\>
 
-Defined in: [src/lib/FileCache.ts:184](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L184)
+Defined in: [src/lib/FileCache.ts:215](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L215)
 
 キーに対応する値を取得
 
@@ -73,7 +74,7 @@ putした時の値を返すプロミス、または、存在しない場合はun
 
 > **getAll**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/lib/FileCache.ts:208](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L208)
+Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L228)
 
 全ての`cache key`とそれに対応する`cache value`を取得する。
 
@@ -87,7 +88,7 @@ Defined in: [src/lib/FileCache.ts:208](https://github.com/ayapapa/file-cache-js/
 
 ###### throwIfInvalid?
 
-`true`
+`boolean`
 
 #### Returns
 
@@ -101,7 +102,7 @@ Defined in: [src/lib/FileCache.ts:208](https://github.com/ayapapa/file-cache-js/
 
 > **getConfig**(): `Required`\<[`Config`](../interfaces/Config.md)\>
 
-Defined in: [src/lib/FileCache.ts:172](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L172)
+Defined in: [src/lib/FileCache.ts:203](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L203)
 
 #### Returns
 
@@ -113,7 +114,7 @@ Defined in: [src/lib/FileCache.ts:172](https://github.com/ayapapa/file-cache-js/
 
 > **purge**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:429](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L429)
+Defined in: [src/lib/FileCache.ts:496](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L496)
 
 一定確率で古いキャッシュの一斉除去を行う
 
@@ -139,7 +140,7 @@ Defined in: [src/lib/FileCache.ts:429](https://github.com/ayapapa/file-cache-js/
 
 > **put**(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:245](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L245)
+Defined in: [src/lib/FileCache.ts:265](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L265)
 
 キーと値をキャッシュに格納する
 
@@ -179,9 +180,10 @@ and removing double quotation marks.
 
 > **remove**(`key`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:258](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L258)
+Defined in: [src/lib/FileCache.ts:279](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L279)
 
-キーに対応する値を削除する
+キーに対応する値を削除する。
+不正キャッシュファイルである場合は、不正ファイル削除設定による（無効判断ならば、削除され`undefined`が返るし、さもなくばエラー。
 
 #### Parameters
 
@@ -201,7 +203,7 @@ Defined in: [src/lib/FileCache.ts:258](https://github.com/ayapapa/file-cache-js/
 
 > `static` **getDefaultConf**(): `object`
 
-Defined in: [src/lib/FileCache.ts:123](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L123)
+Defined in: [src/lib/FileCache.ts:125](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L125)
 
 Static methods.
 
@@ -226,6 +228,7 @@ Default is 10000.
 
 排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
 withLockがtrueのときのみ有効。
+Min設定あり。
 
 ##### lockTtlMs
 
@@ -233,6 +236,7 @@ withLockがtrueのときのみ有効。
 
 排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
 withLockがtrueのときのみ有効。
+Min設定あり。
 
 ##### purgeProbability
 
@@ -240,7 +244,7 @@ withLockがtrueのときのみ有効。
 
 古いキャッシュの除去を実行する確率（割合）。
 例えば、`0.2`を指定した場合は、5回の操作（put, get, remove)で１回の除去が行われる。
-Default is `0.1`. Min is `0`.
+Default is `0.1`. Min is `0`. Max is `1.0`.　範囲外は、MinまたはMaxに調整される。
 
 ##### removeInvalid
 
@@ -261,7 +265,7 @@ Default is `1`. Min is `0`;
 > **retryIoIntervalMs**: `number`
 
 IOエラー時のリトライ間隔(ミリ秒)
-Default is `100`. Min is `100`;
+Default is `100`. Min is `100`. Min未満はMinに調整される。
 
 ##### ttlMs
 

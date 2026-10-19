@@ -6,7 +6,7 @@
 
 # Class: InvalidCache
 
-Defined in: [src/lib/FileCache.ts:494](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L494)
+Defined in: [src/lib/FileCache.ts:561](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L561)
 
 ## Extends
 
@@ -18,7 +18,7 @@ Defined in: [src/lib/FileCache.ts:494](https://github.com/ayapapa/file-cache-js/
 
 > **new InvalidCache**(`msg?`, `param?`): `InvalidCache`
 
-Defined in: [src/lib/FileCache.ts:501](https://github.com/ayapapa/file-cache-js/blob/01fbe314f6b932bcc8438cfff6c56285b7717a9a/src/lib/FileCache.ts#L501)
+Defined in: [src/lib/FileCache.ts:568](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L568)
 
 コンストラクタ。
 

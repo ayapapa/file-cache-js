@@ -8,8 +8,10 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
+  const cache = new FileCache();
+  await cache.purge({ force: true })
 });
 
 describe('FileCache', () => {
@@ -96,6 +98,24 @@ describe('FileCache', () => {
     expect(fs.existsSync(path.join(cacheDir, key))).toBeFalsy();
   });
 
+  it("キャッシュput&get withoutLock.", async () => {
+      const key = "FileCache_putget_withoutLock";
+      const value = { test: 1, hoge: "hello" };
+      await testPutGetTest(key, value, { withLock: false });
+  });
+
+  it("getAll()", async () => {
+    const key = "testGetAll";
+    const value = "testGetAll";
+    const cache = new FileCache({ ttlMs: 0 });
+    await cache.put(key, value);
+    const all = await cache.getAll();
+    expect(all).not.toBeUndefined();
+    expect(Object.keys(all).length).toBeGreaterThanOrEqual(1);
+    expect(all[key]).toBe(value);
+  });
+
+
   it("purge()で、期限切れのキャッシュは削除される。", async () => {
     const key = "FileCache_purge_no_expire";
     const key2 = "FileCache_purge_short_expire";
@@ -125,11 +145,14 @@ describe('FileCache', () => {
     expect(await cache.get(key2)).toBeUndefined();
   });
 
-    it("キャッシュput&get withoutLock.", async () => {
-      const key = "FileCache_putget_object";
-      const value = { test: 1, hoge: "hello" };
-      await testPutGetTest(key, value, { withLock: false });
-  });
+  it("キーにパス不正文字を入れてput&getする", async () => {
+    const key = 'FileCache_\\put""get_special:Key';
+    const value = "キーにパス不正文字を入れてput&getする";
+    await testPutGetTest(key, value);
+  })
+
+
+// そもそも、get&set（putじゃなくてset）にすべきなのか？？？？？
 
 
 });
