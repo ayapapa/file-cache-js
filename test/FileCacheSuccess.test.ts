@@ -17,7 +17,7 @@ afterEach(async () => {
 describe('FileCache', () => {
 
   /**
-   * Success Test for `put` and `get`.
+   * Success Test for `set` and `get`.
    * @param key 
    * @param value 
    */
@@ -43,50 +43,50 @@ describe('FileCache', () => {
       expect(statBefor.mtimeMs).toBe(statAfter.mtimeMs);
   }
 
-  it("キャッシュput&get(object).", async () => {
-    const key = "FileCache_putget_object";
+  it("キャッシュset&get(object).", async () => {
+    const key = "FileCache_setget_object";
     const value = { test: 1, hoge: "hello" };
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(number).", async () => {
-    const key = "FileCache_putget_number";
+  it("キャッシュset&get(number).", async () => {
+    const key = "FileCache_setget_number";
     const value = 1009;
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(boolean).", async () => {
-    const key = "FileCache_putget_boolean";
+  it("キャッシュset&get(boolean).", async () => {
+    const key = "FileCache_setget_boolean";
     const value = true;
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(string).", async () => {
-    const key = "FileCache_putget_string";
+  it("キャッシュset&get(string).", async () => {
+    const key = "FileCache_setget_string";
     const value = "wao!!";
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(array).", async () => {
-    const key = "FileCache_putget_array";
+  it("キャッシュset&get(array).", async () => {
+    const key = "FileCache_setget_array";
     const value = ["wao!!", 1234];
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(null).", async () => {
-    const key = "FileCache_putget_null";
+  it("キャッシュset&get(null).", async () => {
+    const key = "FileCache_setget_null";
     const value = null;
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(undefined).", async () => {
-    const key = "FileCache_putget_undefined";
+  it("キャッシュset&get(undefined).", async () => {
+    const key = "FileCache_setget_undefined";
     const value = undefined;
     await testPutGetTest(key, value);
   });
 
-  it("キャッシュput&get(expired).", async () => {
-    const key = "FileCache_putget_expired";
+  it("キャッシュset&get(expired).", async () => {
+    const key = "FileCache_setget_expired";
     const value = "expired";
     const cache = new FileCache({ ttlMs: 100 });
     await cache.set(key, value);
@@ -98,8 +98,8 @@ describe('FileCache', () => {
     expect(fs.existsSync(path.join(cacheDir, key))).toBeFalsy();
   });
 
-  it("キャッシュput&get withoutLock.", async () => {
-      const key = "FileCache_putget_withoutLock";
+  it("キャッシュset&get withoutLock.", async () => {
+      const key = "FileCache_setget_withoutLock";
       const value = { test: 1, hoge: "hello" };
       await testPutGetTest(key, value, { withLock: false });
   });
@@ -145,14 +145,10 @@ describe('FileCache', () => {
     expect(await cache.get(key2)).toBeUndefined();
   });
 
-  it("キーにパス不正文字を入れてput&getする", async () => {
-    const key = 'FileCache_\\put""get_special:Key';
-    const value = "キーにパス不正文字を入れてput&getする";
+  it("キーにパス不正文字を入れてset&getする", async () => {
+    const key = 'FileCache_\\set""get_special:Key';
+    const value = "キーにパス不正文字を入れてset&getする";
     await testPutGetTest(key, value);
   })
-
-
-// そもそも、get&set（putじゃなくてset）にすべきなのか？？？？？
-
 
 });
