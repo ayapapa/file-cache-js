@@ -180,7 +180,7 @@ describe('FileCache', () => {
     });
     try {
       const cache = new FileCache();
-      await cache.put(key, value);
+      await cache.set(key, value);
       await cache.get(key);
       await cache.remove(key);
       await cache.getAll();
@@ -299,7 +299,7 @@ describe('FileCache', () => {
     fs.writeFileSync(lockPath, "");
     try {
       const cache = new FileCache({ withLock: true, lockTimeoutMs: 100 });
-      await cache.put(key, "hogege");
+      await cache.set(key, "hogege");
     }
     catch (err) {
       expect(err).instanceOf(FileCacheError);
@@ -330,7 +330,7 @@ describe('FileCache', () => {
         key,
         "",
         async (cache: FileCache) => {
-          await cache.put(key2, "dummy");
+          await cache.set(key2, "dummy");
           return await cache.purge({ force: false });
         },
         {},
@@ -364,7 +364,7 @@ describe('FileCache', () => {
         key,
         "",
         async (cache: FileCache) => {
-          await cache.put(key2, "dummy");
+          await cache.set(key2, "dummy");
           return await cache.purge({ force: true });
         },
         {},

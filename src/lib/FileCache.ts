@@ -262,12 +262,12 @@ export class FileCache {
    * @param options オプション。
    * - ttlMs: number型。設定(config)に優先される。
    */
-  public async put(key: string, value: unknown, options?: { ttlMs?: number }) {
+  public async set(key: string, value: unknown, options?: { ttlMs?: number }) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
       const ttlMs = options?.ttlMs ?? this.#currentConfig.ttlMs;
       const expiresAt = ttlMs > 0 ? Date.now() + ttlMs : 0;
-      return this.#put(key, { value, expiresAt });
+      return this.#set(key, { value, expiresAt });
     }) as Promise<void>;
   }
 
@@ -352,7 +352,7 @@ export class FileCache {
    * @param {{value: *, expiresAt: number}}       value   キャッシュする値
    * @param {boolean} [retry=false] trueならエラー時に再実行
    */
-  async #put(key: string, data: Data): Promise<void> {
+  async #set(key: string, data: Data): Promise<void> {
     return this.#access(key, () => {
       fs.writeFileSync(this.#getFilePath(key), JSON.stringify(data, null, "  "));
     },

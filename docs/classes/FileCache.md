@@ -6,7 +6,7 @@
 
 # Class: FileCache
 
-Defined in: [src/lib/FileCache.ts:100](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L100)
+Defined in: [src/lib/FileCache.ts:100](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L100)
 
 ファイルを使ったキャッシュサービスクラス。
 
@@ -23,7 +23,7 @@ and removing double quotation marks.
 
 > **new FileCache**(`config?`): `FileCache`
 
-Defined in: [src/lib/FileCache.ts:185](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L185)
+Defined in: [src/lib/FileCache.ts:185](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L185)
 
 コンストラクタ
 
@@ -47,7 +47,7 @@ null系(nullまたはundefined)指定時は、省略したもととして扱う�
 
 > **get**(`key`): `Promise`\<`unknown`\>
 
-Defined in: [src/lib/FileCache.ts:215](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L215)
+Defined in: [src/lib/FileCache.ts:215](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L215)
 
 キーに対応する値を取得
 
@@ -74,7 +74,7 @@ putした時の値を返すプロミス、または、存在しない場合はun
 
 > **getAll**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L228)
+Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L228)
 
 全ての`cache key`とそれに対応する`cache value`を取得する。
 
@@ -102,7 +102,7 @@ Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/
 
 > **getConfig**(): `Required`\<[`Config`](../interfaces/Config.md)\>
 
-Defined in: [src/lib/FileCache.ts:203](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L203)
+Defined in: [src/lib/FileCache.ts:203](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L203)
 
 #### Returns
 
@@ -114,7 +114,7 @@ Defined in: [src/lib/FileCache.ts:203](https://github.com/ayapapa/file-cache-js/
 
 > **purge**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:496](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L496)
+Defined in: [src/lib/FileCache.ts:496](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L496)
 
 一定確率で古いキャッシュの一斉除去を行う
 
@@ -136,11 +136,34 @@ Defined in: [src/lib/FileCache.ts:496](https://github.com/ayapapa/file-cache-js/
 
 ***
 
-### put()
+### remove()
 
-> **put**(`key`, `value`, `options?`): `Promise`\<`void`\>
+> **remove**(`key`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:265](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L265)
+Defined in: [src/lib/FileCache.ts:279](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L279)
+
+キーに対応する値を削除する。
+不正キャッシュファイルである場合は、不正ファイル削除設定による（無効判断ならば、削除され`undefined`が返るし、さもなくばエラー。
+
+#### Parameters
+
+##### key
+
+`string`
+
+キー
+
+#### Returns
+
+`Promise`\<`void`\>
+
+***
+
+### set()
+
+> **set**(`key`, `value`, `options?`): `Promise`\<`void`\>
+
+Defined in: [src/lib/FileCache.ts:265](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L265)
 
 キーと値をキャッシュに格納する
 
@@ -176,34 +199,11 @@ and removing double quotation marks.
 
 ***
 
-### remove()
-
-> **remove**(`key`): `Promise`\<`void`\>
-
-Defined in: [src/lib/FileCache.ts:279](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L279)
-
-キーに対応する値を削除する。
-不正キャッシュファイルである場合は、不正ファイル削除設定による（無効判断ならば、削除され`undefined`が返るし、さもなくばエラー。
-
-#### Parameters
-
-##### key
-
-`string`
-
-キー
-
-#### Returns
-
-`Promise`\<`void`\>
-
-***
-
 ### getDefaultConf()
 
 > `static` **getDefaultConf**(): `object`
 
-Defined in: [src/lib/FileCache.ts:125](https://github.com/ayapapa/file-cache-js/blob/94bfa40c5a7735eaab2423903b97e220a84031ad/src/lib/FileCache.ts#L125)
+Defined in: [src/lib/FileCache.ts:125](https://github.com/ayapapa/file-cache-js/blob/e321e8b86ea7f3dce4e83f96bec6c0fb3d6dae5a/src/lib/FileCache.ts#L125)
 
 Static methods.
 

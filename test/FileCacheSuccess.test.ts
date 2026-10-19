@@ -23,7 +23,7 @@ describe('FileCache', () => {
    */
   async function testPutGetTest(key: string, value: unknown, options?: Config) {
     const cache = new FileCache(options);
-    await cache.put(key, value);
+    await cache.set(key, value);
     const lockDir = path.join(process.cwd(), '.lock');
     const statBefor = fs.statSync(lockDir);
     expect.assertions(2);
@@ -89,7 +89,7 @@ describe('FileCache', () => {
     const key = "FileCache_putget_expired";
     const value = "expired";
     const cache = new FileCache({ ttlMs: 100 });
-    await cache.put(key, value);
+    await cache.set(key, value);
     await sleepAsync(150);
     expect.assertions(2);
     // 期限切れのため取得できない
@@ -108,7 +108,7 @@ describe('FileCache', () => {
     const key = "testGetAll";
     const value = "testGetAll";
     const cache = new FileCache({ ttlMs: 0 });
-    await cache.put(key, value);
+    await cache.set(key, value);
     const all = await cache.getAll();
     expect(all).not.toBeUndefined();
     expect(Object.keys(all).length).toBeGreaterThanOrEqual(1);
@@ -122,8 +122,8 @@ describe('FileCache', () => {
     const value = "no expiration";
     const value2 = "_200 expiration";
     const cache = new FileCache({ ttlMs: 0 });
-    await cache.put(key, value);
-    await cache.put(key2, value2, { ttlMs: 400 });
+    await cache.set(key, value);
+    await cache.set(key2, value2, { ttlMs: 400 });
     await cache.purge();
     expect(await cache.get(key)).toBe(value);
     expect(await cache.get(key2)).toBe(value2);
@@ -138,8 +138,8 @@ describe('FileCache', () => {
     const value = "no expiration";
     const value2 = "_200 expiration";
     const cache = new FileCache({ ttlMs: 0 });
-    await cache.put(key, value);
-    await cache.put(key2, value2, { ttlMs: 400 });
+    await cache.set(key, value);
+    await cache.set(key2, value2, { ttlMs: 400 });
     await cache.purge({ force: true });
     expect(await cache.get(key)).toBeUndefined();
     expect(await cache.get(key2)).toBeUndefined();
