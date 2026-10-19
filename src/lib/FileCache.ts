@@ -467,7 +467,7 @@ export class FileCache {
       }
     }
     // キャッシュデータ格納ディレクトリ生成失敗
-    throw new FileCacheError("キャッシュデータ格納ディレクトリの作成に失敗しました。", { code: 'ECREATECACHEDIR' });
+    throw new FileCacheError("Failed to create the cache data storage directory.", { code: 'ECREATECACHEDIR' });
   }
 
   /**

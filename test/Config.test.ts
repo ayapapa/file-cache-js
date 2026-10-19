@@ -15,7 +15,7 @@ afterEach(async () => {
 
 describe('FileCache', () => {
 
-  it("初期設定", () => {
+  it("Initial settings.", () => {
     const cache = new FileCache();
     expect(cache.getConfig()).toMatchObject({
       ttlMs:              10 * 60 * 1000,
@@ -29,7 +29,7 @@ describe('FileCache', () => {
     })
   });
 
-  it("Min設定", () => {
+  it("Min setting.", () => {
     const cache = new FileCache({
       ttlMs:              -999,
       retriesOnIoErr:     -555,
@@ -50,6 +50,12 @@ describe('FileCache', () => {
     })
   });
 
+  /**
+   * Invalid configuration test.
+   * @param name 
+   * @param value 
+   * @param code 
+   */
   function testInvalidConf(name: string, value: unknown, code = 'EINVAL'/*exptected?: unknown*/) {
     const defaultConf = FileCache.getDefaultConf() as Record<string, unknown>;
     const conf: Record<string, unknown> = {};
@@ -109,6 +115,14 @@ describe('FileCache', () => {
 
   it("undefined retriesOnIoErr", () => {
     testInvalidConf("retriesOnIoErr", undefined);
+  });
+
+  it("NaN retriesOnIoErr", () => {
+    testInvalidConf("retriesOnIoErr", NaN, 'EOUTRANGE');
+  });
+
+  it("Infinity retriesOnIoErr", () => {
+    testInvalidConf("retriesOnIoErr", Infinity, 'EOUTRANGE');
   });
 
   it("boolean retriesOnIoErr", () => {
@@ -261,6 +275,14 @@ describe('FileCache', () => {
     testInvalidConf("purgeProbability", undefined);
   });
 
+  it("NaN purgeProbability", () => {
+    testInvalidConf("purgeProbability", NaN, 'EOUTRANGE');
+  });
+
+  it("Infinity purgeProbability", () => {
+    testInvalidConf("purgeProbability", Infinity, 'EOUTRANGE');
+  });
+
   it("string purgeProbability", () => {
     testInvalidConf("purgeProbability", "hello");
   });
@@ -303,12 +325,20 @@ describe('FileCache', () => {
   });
 
 
-  it("null removeInvalid", () => {
-    testInvalidConf("removeInvalid", null);
+  it("null invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", null);
   });
 
   it("undefined invalidTtlMs", () => {
     testInvalidConf("invalidTtlMs", undefined);
+  });
+
+  it("NaN invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", NaN, 'EOUTRANGE');
+  });
+
+  it("Infinity invalidTtlMs", () => {
+    testInvalidConf("invalidTtlMs", Infinity, 'EOUTRANGE');
   });
 
   it("string invalidTtlMs", () => {
@@ -327,7 +357,7 @@ describe('FileCache', () => {
     testInvalidConf("invalidTtlMs", [ 0, 1, "eee" ]);
   });
 
-  it("キャッシュディレクトリを指定する（成功編）", () => {
+  it("Specifying a cache directory (successful case).", () => {
     const cacheDir = path.join(process.cwd(), '.cache', 'test');
     const config: Config = { cacheDir };
     try {
@@ -339,7 +369,7 @@ describe('FileCache', () => {
     }
   });
 
-  it("キャッシュディレクトリを指定する（失敗(dirではなかった）編->process.cwd()ベースのディレクトリが選ばれる）", () => {
+  it("Specifying a cache directory (failed case).", () => {
     const cacheDir = path.join(process.cwd(), '.cache', 'test2');
     fs.writeFileSync(cacheDir, "");
     const config: Config = { cacheDir };
@@ -354,8 +384,7 @@ describe('FileCache', () => {
     }
   });
 
-   // キャッシュディレクトリがファイルだったら？
-  it("デフォルトキャッシュディレクトリがファイルだったら", () => {
+  it("If the default cache directory is a file.", () => {
     const dir = path.join(process.cwd(), '.cache');
     const dirBu = path.join(process.cwd(), '.cache.bu');
     fs.renameSync(dir, dirBu);
@@ -368,7 +397,7 @@ describe('FileCache', () => {
       expect(err).instanceOf(FileCacheError);
       expect(err).toMatchObject({
         code: "ECREATECACHEDIR",
-        message: "キャッシュデータ格納ディレクトリの作成に失敗しました。",
+        message: "Failed to create the cache data storage directory.",
       });
     }
     finally {
@@ -377,43 +406,4 @@ describe('FileCache', () => {
     }
   });
 
-
-
-  // ★★★ファイルキャッシュ数の最大値のテスト-1, 0, 1 （ちなみに、Infiniteや、NaNってテストすべき？？）
-  // ちなみに、自分の実用範囲でいうと、、、今、おおよそ１００個が通常運用数　⇒　500くらいをデフォルトMAXにしておきますか？それとも、Infinityにしておきますか？？
-  const n: number = NaN;
-  const i: number = Infinity;
-  console.log("NaN is ", typeof n); 
-  console.log("Infinity is ", typeof i); 
-  // number....  つまり、NaNやInfiniteもちゃんとテストしないとね！！！　★★　最初のころの型チェックテストあたりでどうかな？？
-  // ちなみに、Number.isFinite(n)は、型チェックでしくれて、かつ、NaNやInfiniteもfalseにしてくれるの便利！！！
-  // ★★★以下の結果を参考に！！！！
-  console.log(Math.max(n, 9999999)); // NaN
-  console.log(Math.max(i, 9999999)); // Infinity
-  console.log(Math.min(n, 9999999)); // NaN
-  console.log(Math.min(i, 9999999)); // 9999999
-
-  // 次も参考に！！
-  console.log("Number.isInfinity(...)");
-  console.log("NaN", Number.isFinite(NaN));               // false
-  console.log("Infinity", Number.isFinite(Infinity));               // false
-  console.log("123", Number.isFinite(123));               // true
-  console.log("3.14", Number.isFinite(3.14));               // true
-  console.log('"123"', Number.isFinite("123"));               // false
-  console.log("9007199254740991", Number.isFinite(9007199254740991));               // true
-  console.log("9007199254740992", Number.isFinite(9007199254740992));               // true
-  //console.log("9007199254740993", Number.isFinite(9007199254740993));               // true
-
-  let hoge = 9007199254740991;
-  for (let i = 0; i <10; ++i, ++hoge)
-    console.log("hoge", hoge); // 9007199254740992を超える値にはならない！！
-
-  console.log("Number.isSafeInteger(...)");
-  console.log("NaN", Number.isSafeInteger(NaN));               // false
-  console.log("Infinity", Number.isSafeInteger(Infinity));               // false
-  console.log("123", Number.isSafeInteger(123));               // true
-  console.log("3.14", Number.isSafeInteger(3.14));               // false
-  console.log('"123"', Number.isSafeInteger("123"));               // false
-  console.log("9007199254740991", Number.isSafeInteger(9007199254740991));               // true
-  console.log("9007199254740992", Number.isSafeInteger(9007199254740992));               // false
 });
