@@ -465,5 +465,38 @@ describe('FileCache', () => {
       })
     }, 2);
   });
-  
+
+  // statSync error test
+  it("Invalid cache file (empty) and statSync error!", async () => {
+    // The absence of a value means it is "undefined," so it is not an error.
+    const key = 'statSyncError';
+    const cachePath = getCacheFilePath(key);
+    const statSync = fs.statSync;
+    const spy = vi.spyOn(fs, 'statSync').mockImplementation((path: fs.PathLike) => {
+      if (path === cachePath) return undefined;
+      else return statSync(path);
+    });
+    try {
+      await testInvalid(key, "",
+        async (cache: FileCache) => {
+          await cache.get(key);
+        },
+        {
+          code: "EINVALIDCACHE",
+          key,
+          message: "Found an invalid `cache file`.",
+          cause: {
+            message: "Unexpected end of JSON input", 
+          }
+        },
+        undefined,
+        { removeInvalid: true }
+      );
+    }
+    finally {
+      spy.mockRestore();
+      try { fs.unlinkSync(getCacheFilePath(key)) } catch (_e) { ; }
+    }
+  });
+
 });

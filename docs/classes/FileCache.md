@@ -6,15 +6,17 @@
 
 # Class: FileCache
 
-Defined in: [src/lib/FileCache.ts:100](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L100)
+Defined in: [src/lib/FileCache.ts:114](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L114)
 
-ファイルを使ったキャッシュサービスクラス。
+A cache service class that uses files. 
 
-指定された`cache key`に紐づけて、指定され値をJSON形式で`cache file`に格納する。
-値の型は、JSONに変換できるものに限ります。（Map, Set, Symbol, Bigint, Fnctionなどは、正常に変換できない（無視されたり、nullや、空オブジェクトになる）か、あるいは、エラーになります）
-`cache file`は、"`cache key`.json"という名前で、`cache directory`下に格納される。
-If the specified `cache key` contains characters that are invalid for a file path, 
-it is converted into a valid file path by replacing those characters with underscores 
+Associates a given value with a specified `cache key` and stores it in a `cache file` in JSON format. 
+The value must be of a type that can be converted to JSON. 
+Types such as `Map`, `Set`, `Symbol`, `BigInt`, or `Function` cannot be converted 
+correctly—they may be ignored, converted to `null` or an empty object, or result in an error.
+The `cache file` is stored within a `cache directory` and named "`cache key`.json". 
+If the specified `cache key` contains characters that are invalid for a file path,
+it is converted into a valid file path by replacing those characters with underscores
 and removing double quotation marks.
 
 ## Constructors
@@ -23,9 +25,9 @@ and removing double quotation marks.
 
 > **new FileCache**(`config?`): `FileCache`
 
-Defined in: [src/lib/FileCache.ts:185](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L185)
+Defined in: [src/lib/FileCache.ts:169](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L169)
 
-コンストラクタ
+Constructor.
 
 #### Parameters
 
@@ -33,9 +35,9 @@ Defined in: [src/lib/FileCache.ts:185](https://github.com/ayapapa/file-cache-js/
 
 [`Config`](../interfaces/Config.md) = `FileCache.#defaultConfig`
 
-設定。
-指定された値以外はデフォルト設定値になる。
-null系(nullまたはundefined)指定時は、省略したもととして扱う。
+Configurations.
+Any value other than those explicitly specified will default to the default setting. 
+If a null-like value (null or undefined) is provided, it is treated as if the value had been omitted.
 
 #### Returns
 
@@ -47,9 +49,9 @@ null系(nullまたはundefined)指定時は、省略したもととして扱う�
 
 > **get**(`key`): `Promise`\<`unknown`\>
 
-Defined in: [src/lib/FileCache.ts:215](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L215)
+Defined in: [src/lib/FileCache.ts:199](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L199)
 
-キーに対応する値を取得
+Get the `cache value` corresponding to the `cache key`.
 
 #### Parameters
 
@@ -66,7 +68,13 @@ and removing double quotation marks.
 
 `Promise`\<`unknown`\>
 
-putした時の値を返すプロミス、または、存在しない場合はundefined.
+A promise that resolves to the `cache value' provided during 
+the `put` operation (or `undefined` if no `cache key' exists for the given 'cache key').
+
+#### Throws
+
+- `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
+- `FileCacheError` If invalid `cache key', file IO error, or lock error.
 
 ***
 
@@ -74,17 +82,19 @@ putした時の値を返すプロミス、または、存在しない場合はun
 
 > **getAll**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L228)
+Defined in: [src/lib/FileCache.ts:218](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L218)
 
-全ての`cache key`とそれに対応する`cache value`を取得する。
+Get all `cache key`s and their corresponding `cache value`s. 
+Expired cache entries are listed with a value of `undefined`.
 
 #### Parameters
 
 ##### options?
 
-オプション。 <br>
-- throwIfInvalid: `boolean`  true なら、不正キャッシュファイルを発見した際にエラーを投げる。
-ただし、 不正`cache file`判定は、コンストラクト時の`Config`の`removeInvalid`および`invalidTtlMs`に依存する。(see also `Config`.)
+Options. <br>
+- throwIfInvalid: `boolean` — If `true`, an error is thrown when an invalid cache file is encountered. 
+Note that the determination of whether a `cache file` is invalid depends on the `removeInvalid` and 
+`invalidTtlMs` settings defined in the `Config` object at the time of construction. (See also `Config`.)
 
 ###### throwIfInvalid?
 
@@ -94,7 +104,12 @@ Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/
 
 `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-取得に成功した`cache key`と`cache value`({`cache key`: `cache value`})を解決するプロミス。
+A promise that resolves to the retrieved `cache key`s and `cache value`s (in the format { `cache key`: `cache value` }).
+
+#### Throws
+
+- `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
+- `FileCacheError` If file IO error, or lock error.
 
 ***
 
@@ -102,11 +117,15 @@ Defined in: [src/lib/FileCache.ts:228](https://github.com/ayapapa/file-cache-js/
 
 > **getConfig**(): `Required`\<[`Config`](../interfaces/Config.md)\>
 
-Defined in: [src/lib/FileCache.ts:203](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L203)
+Defined in: [src/lib/FileCache.ts:242](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L242)
+
+Get the current configurations.
 
 #### Returns
 
 `Required`\<[`Config`](../interfaces/Config.md)\>
+
+Copy of the current configurations.
 
 ***
 
@@ -114,17 +133,17 @@ Defined in: [src/lib/FileCache.ts:203](https://github.com/ayapapa/file-cache-js/
 
 > **purge**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:512](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L512)
+Defined in: [src/lib/FileCache.ts:253](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L253)
 
-キャッシュの一斉除去を行う
+Perform a mass removal of the cash.
 
 #### Parameters
 
 ##### options?
 
-オプション
-- force: `boolean` `true`なら、不正キャッシュファイルを除き、すべて削除。
-ただし、 不正`cache file`判定は、コンストラクト時の`Config`の`removeInvalid`および`invalidTtlMs`に依存する。(see also `Config`.)
+Options.
+- force: `boolean` — If `true`, deletes all cache files, including those identified as invalid. 
+Note that the determination of whether a cache file is "invalid" depends on the `removeInvalid` and `invalidTtlMs` settings in the `Config` object provided at instantiation. (See also `Config`.)
 
 ###### force?
 
@@ -134,7 +153,7 @@ Defined in: [src/lib/FileCache.ts:512](https://github.com/ayapapa/file-cache-js/
 
 `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-削除失敗となったキーとその原因。削除失敗がなければ、`undefined`.
+An object containing the keys that failed to be deleted and the reasons for the failure; returns `undefined` if no deletions failed.
 
 ***
 
@@ -142,10 +161,10 @@ Defined in: [src/lib/FileCache.ts:512](https://github.com/ayapapa/file-cache-js/
 
 > **remove**(`key`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:279](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L279)
+Defined in: [src/lib/FileCache.ts:286](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L286)
 
-キーに対応する値を削除する。
-不正キャッシュファイルである場合は、不正ファイル削除設定による（無効判断ならば、削除され`undefined`が返るし、さもなくばエラー。
+`cache key`に対応する`chache file`を削除する。
+不正`chache file`である場合は、`removeInvalid`および`invalidTtlMs`の設定に従い削除され`undefined`が返るか、もしくは、エラー。
 
 #### Parameters
 
@@ -159,15 +178,25 @@ Defined in: [src/lib/FileCache.ts:279](https://github.com/ayapapa/file-cache-js/
 
 `Promise`\<`void`\>
 
+#### Throws
+
+- `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
+- `FileCacheError` If invalid `cache key', file IO error, or lock error.
+
 ***
 
 ### set()
 
 > **set**(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:265](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L265)
+Defined in: [src/lib/FileCache.ts:310](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L310)
 
-キーと値をキャッシュに格納する
+Store `cache key' and `cache value` ​​in a `cache file`. 
+If a `cache file` with the same 'cache key' already exists, it will be overwritten.
+@param key     `cache key'
+If the specified `cache key` contains characters that are invalid for a file path, 
+it is converted into a valid file path by replacing those characters with underscores 
+and removing double quotation marks.
 
 #### Parameters
 
@@ -175,21 +204,16 @@ Defined in: [src/lib/FileCache.ts:265](https://github.com/ayapapa/file-cache-js/
 
 `string`
 
-キー
-If the specified `cache key` contains characters that are invalid for a file path, 
-it is converted into a valid file path by replacing those characters with underscores 
-and removing double quotation marks.
-
 ##### value
 
 `unknown`
 
-値
+`cache value'
+@param options Options.
+- ttlMs: `number` type. Takes precedence over the configuration passed to the constructor.
+@throws  `FileCacheError` If invalid `cache key', file IO error, or lock error.
 
 ##### options?
-
-オプション。
-- ttlMs: number型。設定(config)に優先される。
 
 ###### ttlMs?
 
@@ -205,7 +229,7 @@ and removing double quotation marks.
 
 > `static` **getDefaultConf**(): `object`
 
-Defined in: [src/lib/FileCache.ts:125](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L125)
+Defined in: [src/lib/FileCache.ts:139](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L139)
 
 Static methods.
 
@@ -215,70 +239,81 @@ Static methods.
 
 > **cacheDir**: `string`
 
+Cache directory. 
+Default is "`process.cwd()`/.cache".
+
 ##### invalidTtlMs
 
 > **invalidTtlMs**: `number`
 
 Validity period in milliseconds for the modification time of invalid `cache file`. <br>
 If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly deleted. 
-Minimum is `0`.
-Default is 10000.
+Minimum is `0` if a value lower than this is specified, this minimum value is used. 
+Default is `10000`.
 
 ##### lockTimeoutMs
 
 > **lockTimeoutMs**: `number`
 
-排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
-withLockがtrueのときのみ有効。
-Min設定あり。
+Maximum wait time to acquire the lock [milliseconds]. <br>
+`0` does not wait for the preceding unlock. 
+The minimum value is `0`; if a value lower than this is specified, this minimum value is used.
+Default is `1000`.
 
 ##### lockTtlMs
 
 > **lockTtlMs**: `number`
 
-排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
-withLockがtrueのときのみ有効。
-Min設定あり。
+Lock validity period (time to live): the maximum time [milliseconds] from lock acquisition 
+until the cache operation completes execution. An error (TTLExceeded) occurs if this 
+period is exceeded. 
+If it's thrown, set this longer.
+The minimum value is `1000`; if a value lower than this is specified, this minimum value is used.
+Default is `1000`.
 
 ##### purgeProbability
 
 > **purgeProbability**: `number`
 
-古いキャッシュの除去を実行する確率（割合）。
-例えば、`0.2`を指定した場合は、5回の操作（put, get, remove)で１回の除去が行われる。
-Default is `0.1`. Min is `0`. Max is `1.0`.　範囲外は、MinまたはMaxに調整される。
+The probability (rate) at which old cache entries are removed. 
+For example, if `0.2` is specified, one removal operation will occur for every five operations (`put`, `get`, or `remove`). 
+Default is `0.1`. The minimum is `0`, and the maximum is `1.0`. Values ​​outside this range will be adjusted to the minimum or maximum.
 
 ##### removeInvalid
 
 > **removeInvalid**: `boolean`
 
-不正なキャッシュファイルを削除するか否か 。
+Specifies whether to remove invalid cache files.
 See also `invalidTtlMs`.
 
 ##### retriesOnIoErr
 
 > **retriesOnIoErr**: `number`
 
-IOエラー時のリトライ回数。
-Default is `1`. Min is `0`;
+Number of retries in the event of an I/O error. 
+Default is `1`. 
+Min is `0`. If a negative value is specified, it will be adjusted to the minimum.
 
 ##### retryIoIntervalMs
 
 > **retryIoIntervalMs**: `number`
 
-IOエラー時のリトライ間隔(ミリ秒)
-Default is `100`. Min is `100`. Min未満はMinに調整される。
+Retry interval for IO errors (in milliseconds)
+Default is `100`. 
+Min is `100`. Values ​​below the minimum will be adjusted to the minimum.
 
 ##### ttlMs
 
 > **ttlMs**: `number`
 
-キャッシュ有効期間(ミリ秒)
-`0`以下を指定した時は、有効期限なし。
-Default is '600000'. Min is 0.
+Cache validity period (milliseconds)
+If a value of `0` or less is specified, there is no expiration date.
+The default is `600000`', which means 10 minutes.
+Min is `0`.
 
 ##### withLock
 
 > **withLock**: `boolean`
 
-`get`/`put`/`remove`時に、キャッシュファイルIO処理に排他制御を掛けるか否か
+Specifies whether to apply exclusive control to cache file I/O operations 
+during `get`, `set`, or `remove` actions. This helps avoid conflicts with other processes.

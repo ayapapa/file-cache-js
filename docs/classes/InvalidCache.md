@@ -6,7 +6,9 @@
 
 # Class: InvalidCache
 
-Defined in: [src/lib/FileCache.ts:584](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L584)
+Defined in: [src/lib/FileCache.ts:604](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L604)
+
+Invalid cache error.
 
 ## Extends
 
@@ -18,9 +20,9 @@ Defined in: [src/lib/FileCache.ts:584](https://github.com/ayapapa/file-cache-js/
 
 > **new InvalidCache**(`msg?`, `param?`): `InvalidCache`
 
-Defined in: [src/lib/FileCache.ts:591](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L591)
+Defined in: [src/lib/FileCache.ts:611](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L611)
 
-コンストラクタ。
+Constructor.
 
 #### Parameters
 
@@ -32,7 +34,7 @@ Error message. If null, use a default message("Found an invalid `cache file`.").
 
 ##### param?
 
-Parameters。
+Parameters.
 
 ###### cause?
 

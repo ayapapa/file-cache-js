@@ -413,7 +413,7 @@ export class FileCache {
       // Check and evaluate the file's modification time.
       const stat = await this.#access(
         key, 
-        () => fs.statSync(this.#getFilePath(key), { throwIfNoEntry: false }),
+        () => fs.statSync(filePath, { throwIfNoEntry: false }),
         "Failed to get `cache file` information."
       ) as fs.Stats | undefined;
       if (stat === undefined || stat.mtimeMs + this.#currentConfig.invalidTtlMs > Date.now()) {
@@ -519,9 +519,8 @@ export class FileCache {
   async #remove(key: string) {
     const path = this.#getFilePath(key)
     return this.#access(key, () => {
-      if (fs.existsSync(path)) {
+      fs.existsSync(path) &&
         fs.unlinkSync(path);
-      } 
     },
     "Failed to remove `cache file`."
     ) as Promise<void>;

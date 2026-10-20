@@ -6,7 +6,9 @@
 
 # Class: FileCacheError
 
-Defined in: [src/lib/FileCache.ts:570](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L570)
+Defined in: [src/lib/FileCache.ts:587](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L587)
+
+File cache error.
 
 ## Extends
 
@@ -22,9 +24,9 @@ Defined in: [src/lib/FileCache.ts:570](https://github.com/ayapapa/file-cache-js/
 
 > **new FileCacheError**(`msg`, `param?`): `FileCacheError`
 
-Defined in: [src/lib/FileCache.ts:576](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L576)
+Defined in: [src/lib/FileCache.ts:593](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L593)
 
-コンストラクタ。
+Constructor.
 
 #### Parameters
 
@@ -36,7 +38,7 @@ Error message.
 
 ##### param?
 
-Parameters。
+Parameters.
 
 ###### cause?
 

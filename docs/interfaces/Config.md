@@ -6,7 +6,9 @@
 
 # Interface: Config
 
-Defined in: [src/lib/FileCache.ts:15](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L15)
+Defined in: [src/lib/FileCache.ts:18](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L18)
+
+Configurations.
 
 ## Properties
 
@@ -14,7 +16,10 @@ Defined in: [src/lib/FileCache.ts:15](https://github.com/ayapapa/file-cache-js/b
 
 > `optional` **cacheDir?**: `string`
 
-Defined in: [src/lib/FileCache.ts:38](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L38)
+Defined in: [src/lib/FileCache.ts:45](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L45)
+
+Cache directory. 
+Default is "`process.cwd()`/.cache".
 
 ***
 
@@ -22,12 +27,12 @@ Defined in: [src/lib/FileCache.ts:38](https://github.com/ayapapa/file-cache-js/b
 
 > `optional` **invalidTtlMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:78](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L78)
+Defined in: [src/lib/FileCache.ts:90](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L90)
 
 Validity period in milliseconds for the modification time of invalid `cache file`. <br>
 If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly deleted. 
-Minimum is `0`.
-Default is 10000.
+Minimum is `0` if a value lower than this is specified, this minimum value is used. 
+Default is `10000`.
 
 ***
 
@@ -35,11 +40,12 @@ Default is 10000.
 
 > `optional` **lockTimeoutMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:50](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L50)
+Defined in: [src/lib/FileCache.ts:59](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L59)
 
-排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
-withLockがtrueのときのみ有効。
-Min設定あり。
+Maximum wait time to acquire the lock [milliseconds]. <br>
+`0` does not wait for the preceding unlock. 
+The minimum value is `0`; if a value lower than this is specified, this minimum value is used.
+Default is `1000`.
 
 ***
 
@@ -47,11 +53,14 @@ Min設定あり。
 
 > `optional` **lockTtlMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:57](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L57)
+Defined in: [src/lib/FileCache.ts:69](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L69)
 
-排他制御のロック獲得までの最大待ち時間（コメントはコピーせよ）
-withLockがtrueのときのみ有効。
-Min設定あり。
+Lock validity period (time to live): the maximum time [milliseconds] from lock acquisition 
+until the cache operation completes execution. An error (TTLExceeded) occurs if this 
+period is exceeded. 
+If it's thrown, set this longer.
+The minimum value is `1000`; if a value lower than this is specified, this minimum value is used.
+Default is `1000`.
 
 ***
 
@@ -59,11 +68,11 @@ Min設定あり。
 
 > `optional` **purgeProbability?**: `number`
 
-Defined in: [src/lib/FileCache.ts:64](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L64)
+Defined in: [src/lib/FileCache.ts:76](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L76)
 
-古いキャッシュの除去を実行する確率（割合）。
-例えば、`0.2`を指定した場合は、5回の操作（put, get, remove)で１回の除去が行われる。
-Default is `0.1`. Min is `0`. Max is `1.0`.　範囲外は、MinまたはMaxに調整される。
+The probability (rate) at which old cache entries are removed. 
+For example, if `0.2` is specified, one removal operation will occur for every five operations (`put`, `get`, or `remove`). 
+Default is `0.1`. The minimum is `0`, and the maximum is `1.0`. Values ​​outside this range will be adjusted to the minimum or maximum.
 
 ***
 
@@ -71,9 +80,9 @@ Default is `0.1`. Min is `0`. Max is `1.0`.　範囲外は、MinまたはMaxに�
 
 > `optional` **removeInvalid?**: `boolean`
 
-Defined in: [src/lib/FileCache.ts:70](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L70)
+Defined in: [src/lib/FileCache.ts:82](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L82)
 
-不正なキャッシュファイルを削除するか否か 。
+Specifies whether to remove invalid cache files.
 See also `invalidTtlMs`.
 
 ***
@@ -82,10 +91,11 @@ See also `invalidTtlMs`.
 
 > `optional` **retriesOnIoErr?**: `number`
 
-Defined in: [src/lib/FileCache.ts:27](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L27)
+Defined in: [src/lib/FileCache.ts:32](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L32)
 
-IOエラー時のリトライ回数。
-Default is `1`. Min is `0`;
+Number of retries in the event of an I/O error. 
+Default is `1`. 
+Min is `0`. If a negative value is specified, it will be adjusted to the minimum.
 
 ***
 
@@ -93,10 +103,11 @@ Default is `1`. Min is `0`;
 
 > `optional` **retryIoIntervalMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:33](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L33)
+Defined in: [src/lib/FileCache.ts:39](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L39)
 
-IOエラー時のリトライ間隔(ミリ秒)
-Default is `100`. Min is `100`. Min未満はMinに調整される。
+Retry interval for IO errors (in milliseconds)
+Default is `100`. 
+Min is `100`. Values ​​below the minimum will be adjusted to the minimum.
 
 ***
 
@@ -104,11 +115,12 @@ Default is `100`. Min is `100`. Min未満はMinに調整される。
 
 > `optional` **ttlMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:21](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L21)
+Defined in: [src/lib/FileCache.ts:25](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L25)
 
-キャッシュ有効期間(ミリ秒)
-`0`以下を指定した時は、有効期限なし。
-Default is '600000'. Min is 0.
+Cache validity period (milliseconds)
+If a value of `0` or less is specified, there is no expiration date.
+The default is `600000`', which means 10 minutes.
+Min is `0`.
 
 ***
 
@@ -116,6 +128,7 @@ Default is '600000'. Min is 0.
 
 > `optional` **withLock?**: `boolean`
 
-Defined in: [src/lib/FileCache.ts:43](https://github.com/ayapapa/file-cache-js/blob/a28be93b71b8f3154b0d250cc28f9519421c6b88/src/lib/FileCache.ts#L43)
+Defined in: [src/lib/FileCache.ts:51](https://github.com/ayapapa/file-cache-js/blob/fbe5252d849e2bba60c00f123621b38ec07863f1/src/lib/FileCache.ts#L51)
 
-`get`/`put`/`remove`時に、キャッシュファイルIO処理に排他制御を掛けるか否か
+Specifies whether to apply exclusive control to cache file I/O operations 
+during `get`, `set`, or `remove` actions. This helps avoid conflicts with other processes.
