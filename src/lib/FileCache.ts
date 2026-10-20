@@ -70,7 +70,7 @@ export interface Config {
 
   /**
    * The probability (rate) at which old cache entries are removed. 
-   * For example, if `0.2` is specified, one removal operation will occur for every five operations (`put`, `get`, or `remove`). 
+   * For example, if `0.2` is specified, one removal operation will occur for every five operations (`set`, `get`, or `remove`). 
    * Default is `0.1`. The minimum is `0`, and the maximum is `1.0`. Values ​​outside this range will be adjusted to the minimum or maximum.
    */
   purgeProbability?: number;
@@ -106,6 +106,8 @@ type Data = {
  * The value must be of a type that can be converted to JSON. 
  * Types such as `Map`, `Set`, `Symbol`, `BigInt`, or `Function` cannot be converted 
  * correctly—they may be ignored, converted to `null` or an empty object, or result in an error.
+ * If you wish to cache these values, please convert them into a format 
+ * that can be serialized to JSON before and after the caching process.
  * The `cache file` is stored within a `cache directory` and named "`cache key`.json". 
  * If the specified `cache key` contains characters that are invalid for a file path,
  * it is converted into a valid file path by replacing those characters with underscores
@@ -191,7 +193,7 @@ export class FileCache {
    * it is converted into a valid file path by replacing those characters with underscores 
    * and removing double quotation marks.
    * @returns A promise that resolves to the `cache value' provided during 
-   * the `put` operation (or `undefined` if no `cache key' exists for the given 'cache key').
+   * the `set` operation (or `undefined` if no `cache key' exists for the given 'cache key').
    * @throws  
    * - `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
    * - `FileCacheError` If invalid `cache key', file IO error, or lock error.
@@ -276,9 +278,10 @@ export class FileCache {
   }
 
   /**
-   * `cache key`に対応する`chache file`を削除する。
-   * 不正`chache file`である場合は、`removeInvalid`および`invalidTtlMs`の設定に従い削除され`undefined`が返るか、もしくは、エラー。
-   * @param key キー
+   * Remove the `cache file` corresponding to a given `cache key`. 
+   * If the `cache file` is considered invalid, it is deleted according to the `removeInvalid` 
+   * and `invalidTtlMs` settings, resulting in either a return value of `undefined` or an error.
+   * @param key `cache key`
    * @throws  
    * - `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
    * - `FileCacheError` If invalid `cache key', file IO error, or lock error.
@@ -286,9 +289,9 @@ export class FileCache {
   public async remove(key: string) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
-      // '#get'することで、余分なファイルの削除をさせる。
-      // '#get'で有効と判定されたファイルは、'#remove'で削除する。
-      // ただし、'value'そのものが`undefined`のケース(res.value === undefined && reason==='ASIS')もある。
+      // Use '#get' to identify files for deletion. 
+      // Files determined to be eligible via '#get' are then deleted using '#remove'. 
+      // Note, however, that there are cases where 'value' itself is `undefined` (i.e., `res.value === undefined && reason === 'ASIS'`).
       const res = await this.#get(key);
       if (res.value === undefined && res.reason !== 'ASIS') return;
       return this.#remove(key);
@@ -303,6 +306,11 @@ export class FileCache {
    * it is converted into a valid file path by replacing those characters with underscores 
    * and removing double quotation marks.
    * @param value   `cache value'
+   * The value must be of a type that can be converted to JSON. 
+   * Types such as `Map`, `Set`, `Symbol`, `BigInt`, or `Function` cannot be converted 
+   * correctly—they may be ignored, converted to `null` or an empty object, or result in an error.
+   * If you wish to cache these values, please convert them into a format 
+   * that can be serialized to JSON before the caching process.
    * @param options Options.
    * - ttlMs: `number` type. Takes precedence over the configuration passed to the constructor.
    * @throws  `FileCacheError` If invalid `cache key', file IO error, or lock error.

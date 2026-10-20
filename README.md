@@ -1,3 +1,10 @@
+[![CI](https://github.com/ayapapa/file-cache-js/actions/workflows/ci.yml/badge.svg)](https://github.com/ayapapa/file-cache-js/actions/workflows/ci.yml)
+![Coverage](https://raw.githubusercontent.com/ayapapa/file-cache-js/main/badges/coverage-total.svg)
+![Branches](https://raw.githubusercontent.com/ayapapa/file-cache-js/main/badges/coverage-branches.svg)
+![Functions](https://raw.githubusercontent.com/ayapapa/file-cache-js/main/badges/coverage-functions.svg)
+![Lines](https://raw.githubusercontent.com/ayapapa/file-cache-js/main/badges/coverage-lines.svg)
+![Statements](https://raw.githubusercontent.com/ayapapa/file-cache-js/main/badges/coverage-statements.svg)
+
 # file-cache-js
 
 ## Table of contents
@@ -15,9 +22,10 @@ Consequently, it allows for tasks such as temporarily caching the results of req
 ## Definitions of Terms
 |        Term     |  Explanation  |  See also  |
 | --------------- | ------------- | -------------|
-| `cache key`        | A key used to apply a lock. When multiple operations use the same key, they are executed sequentially. If the specified `lock key` contains characters that are invalid for a file path, it is converted into a valid file path by replacing those characters with underscores and removing double quotation marks. | `lock file`, `temporary lock file`, `lock sharers` | 
-| `cache directory`  | A directory where `lock file`s are stored. | `lock file`, [Configurations](#configurations) |
-| `cache file`       | It is associated with the specified `lock key` and stores information related to the lock owner, the actual expiration time, and so forth. <br>For example, if the `lock key` is "key001", a file 
+| `cache key`        | A key used to apply a cache. When multiple operations use the same key, they are executed sequentially. If the specified `cache key` contains characters that are invalid for a file path, it is converted into a valid file path by replacing those characters with underscores and removing double quotation marks. | `cache file` | 
+| `cache directory`  | A directory where `cache file`s are stored. | `cache file`, [Configurations](#configurations) |
+| `cache file`       | It is associated with the specified `cache key` and stores `cache value` and the actual expiration time. <br>For example, if the `cache key` is "key001", a file named "key001.json" is created under the `cache directory` and deleted when the cache is expired. | `cache key`, `cache directory`
+| `cache value`      | It is a user-specified value that is associated with a ‘cache key’ and stored in a ‘cache file’. The value must be of a type that can be converted to JSON. Types such as `Map`, `Set`, `Symbol`, `BigInt`, or `Function` cannot be converted correctly—they may be ignored, converted to `null` or an empty object, or result in an error. If you wish to cache these values, please convert them into a format that can be serialized to JSON before the caching process. | `cache key`, `cache file`
 
 ## Features
 
