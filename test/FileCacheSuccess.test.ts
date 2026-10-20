@@ -163,7 +163,23 @@ describe('FileCache', () => {
   })
 
   // purgeProbability: 1.0のテストを追加せよ
-  // 過去データをセット2回セットしても、最後キャッシュファイルだけ残る
+  // 過去データをセット後に、次のセットしても、最初のファイルは存在しない
   // getすると無くなることもテストしても良いかも
+  it("purgeProbability: 1.0", async () => {
+    const key = 'FileCache_purgeProbability1.0';
+    const cachePath = getCacheFilePath(key);
+    const key2 = 'FileCache_purgeProbability1.0_2';
+    const value = "purgeProbability: 1.0";
+    const cache = new FileCache({ purgeProbability: 1.0 });
+    const data = { value: 1234, expiresAt: Date.now() - 1000 }
+
+    // 50回テストすれば十分だろう
+    for(let i = 0; i < 50; i++) {
+      fs.writeFileSync(cachePath, JSON.stringify(data, null, '  '));
+      await cache.set(key2, value);
+      expect(fs.existsSync(cachePath)).toBeFalsy();
+    }
+
+  })
   
 });
