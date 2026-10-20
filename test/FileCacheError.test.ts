@@ -23,7 +23,7 @@ describe('FileCache', () => {
     return path.join(process.cwd(), '.cache', `${key}.json`);
   }
   
-  /** 不正ファイルを作成し、getまたはgetALlのテストを行う */
+  /** Create a cache file with the specified content and perform a test. */
   async function testInvalid(
     key: string, 
     data: Record<string, unknown> | string, 
@@ -50,10 +50,8 @@ describe('FileCache', () => {
     }
   }
 
-  // 不正キャッシュファイル発見時
-  // invaldTtlMs登場ですかなぁ。。。。
-  it("不正なキャッシュファイル(valueが無い)", async () => {
-    // valueが無いのは、undefinedということなので、エラーではない。
+  it("Invalid cache file (missing 'value').", async () => {
+    // The absence of a value means it is "undefined," so it is not an error.
     const key = 'invalidNoValue';
     await testInvalid(key, 
       { "expiresAt": Date.now() + 1000 },
@@ -64,7 +62,7 @@ describe('FileCache', () => {
     fs.unlinkSync(getCacheFilePath(key));
   });
 
-  it("不正なキャッシュファイル(expiresAtが無い)", async () => {
+  it("Invalid cache file (missing `expiresAt`).", async () => {
     const key = 'invalidNoexpiresAt';
     await testInvalid(key, {
       value: { hoge: 123 },
@@ -79,7 +77,7 @@ describe('FileCache', () => {
     fs.unlinkSync(getCacheFilePath(key));
   });
 
-  it("不正なキャッシュファイル(空ファイル)", async () => {
+  it("Invalid cache file (empty file).", async () => {
     const key = 'invalidJson';
     await testInvalid(key, "", async (cache: FileCache) => await cache.get(key), {
       code: 'EINVALIDCACHE',
@@ -92,7 +90,7 @@ describe('FileCache', () => {
     fs.unlinkSync(getCacheFilePath(key));
   });
 
-  it("不正なキャッシュファイル(JSONでない)", async () => {
+  it("Invalid cache file (not JSON).", async () => {
     const key = 'invalidJson';
     await testInvalid(key, "()", async (cache: FileCache) => await cache.get(key), {
       code: 'EINVALIDCACHE',
@@ -105,8 +103,7 @@ describe('FileCache', () => {
     fs.unlinkSync(getCacheFilePath(key));
   });
 
-/**/ 
-  it("不正なキャッシュファイル(getAll)", async () => {
+  it("Invalid cache file (getAll).", async () => {
     const key = 'invalidJsonGetAll';
     await testInvalid(
       key, 
@@ -121,8 +118,8 @@ describe('FileCache', () => {
     });
     fs.unlinkSync(getCacheFilePath(key));
   });
-/**/
-  it("不正なキャッシュファイル(getAll no throw)", async () => {
+
+  it("Corrupt cache file (getAll no throw).", async () => {
     const key = 'invalidJsonGetAllNoThrow';
     await testInvalid(key, "()", async (cache: FileCache) => await cache.getAll({ throwIfInvalid: false }), {
       code: 'EINVALIDCACHE',
@@ -137,8 +134,9 @@ describe('FileCache', () => {
     fs.unlinkSync(getCacheFilePath(key));
   });
 
-  it("不正なキャッシュファイルかつ無効=>get()=>削除されるはず", async () => {
-    // 不正ファイルを作り、更新時間を過去に設定し、無効と判定させる
+  it("Invalid old cache file => get() => should be deleted", async () => {
+    // Create a malicious file, set its modification timestamp to a past date, 
+    // and cause it to be flagged as invalid.
     const key = 'invalidFile';
     await testInvalid(key, 
       "",
@@ -159,48 +157,62 @@ describe('FileCache', () => {
     );
   });
 
+  /**
+   * IO error test.
+   * @param key 
+   * @param value 
+   * @param errFunc 
+   * @param mockCb 
+   * @param errObj 
+   */
   async function testIOError(
     key: string, 
     value: unknown, 
     errFunc: 'readFileSync' | 'writeFileSync' | 'readdirSync' | 'existsSync' | 'unlinkSync', 
     mockCb: (args: unknown[]) => unknown,
-    errObj: Record<string, unknown>,
-    //finCb: () => void,
+    errObj: Record<string, unknown> | null,
+    actionCb?: (cache: FileCache) => unknown,
+    actionCbAssertions: number = 0,
   ) {
     const cacheFilePath = getCacheFilePath(key);
     const cacheDirPath = path.join(process.cwd(), '.cache');
     const orgFunc = fs[errFunc] as ((...args: unknown[]) => unknown);
     const spy = vi.spyOn(fs, errFunc).mockImplementation((...args: unknown[]) => {
-      //return mockCb(orgFunc as ((...args: unknown[]) => unknown), args);
-      const checkPath = errFunc === 'readdirSync' ? cacheDirPath : cacheFilePath;
+    const checkPath = errFunc === 'readdirSync' ? cacheDirPath : cacheFilePath;
       if (args[0] as string === checkPath)
         return mockCb(args);
       else 
         return orgFunc(...args);
     });
+    expect.assertions(actionCbAssertions + (errObj != null ? 3 : 0))
     try {
       const cache = new FileCache();
-      await cache.set(key, value);
-      await cache.get(key);
-      await cache.remove(key);
-      await cache.getAll();
+      if (actionCb) {
+        await actionCb(cache);
+      }
+      else {
+        await cache.set(key, value);
+        await cache.get(key);
+        await cache.remove(key);
+        await cache.getAll();
+      }
     }
     catch (err) {
+      expect(errObj).not.toBeNull();
       expect(err).instanceOf(FileCacheError);
-      expect(err).toMatchObject(errObj);
+      if (errObj) {
+        expect(err).toMatchObject(errObj);
+      }
     }
     finally {
       spy.mockRestore();
       try { fs.unlinkSync(cacheFilePath) } catch (_) {;};
     }
-
   }
 
-  // File IO(read, write, readdir, unlink)エラーテスト
-  it("readFileSyncエラー", async () => {
+  it("readFileSync error.", async () => {
     const key = "readFileSyncError";
-    //const cacheFilePath = getCacheFilePath(key);
-    await testIOError(key, "readFileSyncエラー", 'readFileSync', 
+    await testIOError(key, "readFileSyncError", 'readFileSync', 
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
@@ -212,14 +224,12 @@ describe('FileCache', () => {
           message: "Error!",
         }
       },
-      //() => {try { fs.unlinkSync(cacheFilePath) } catch (_) {;} },
     );
   });
 
-  it("writeSyncエラー", async () => {
+  it("writeSync error", async () => {
     const key = "writeFileSyncError";
-    //const cacheFilePath = getCacheFilePath(key);
-    await testIOError(key, "writeSyncエラー", 'writeFileSync', 
+    await testIOError(key, "writeSyncError", 'writeFileSync', 
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
@@ -231,14 +241,12 @@ describe('FileCache', () => {
           message: "Error!",
         }
       },
-      //() => {try { fs.unlinkSync(cacheFilePath) } catch (_) {;} },
     );
   });
 
-  it("unlinkSyncエラー", async () => {
+  it("unlinkSyncError", async () => {
     const key = "unlinkSyncError";
-    //const cacheFilePath = getCacheFilePath(key);
-    await testIOError(key, "unlinkSyncエラー", 'unlinkSync', 
+    await testIOError(key, "unlinkSyncError", 'unlinkSync', 
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
@@ -250,14 +258,12 @@ describe('FileCache', () => {
           message: "Error!",
         }
       },
-      //() => {try { fs.unlinkSync(cacheFilePath) } catch (_) {;} },
     );
   });
 
-  it("existsSyncエラー", async () => {
+  it("existsSyncError", async () => {
     const key = "existsSyncError";
-    //const cacheFilePath = getCacheFilePath(key);
-    await testIOError(key, "existsSyncエラー", 'existsSync', 
+    await testIOError(key, "existsSyncError", 'existsSync', 
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
@@ -269,14 +275,12 @@ describe('FileCache', () => {
           message: "Error!",
         }
       },
-      //() => {try { fs.unlinkSync(cacheFilePath) } catch (_) {;} },
     );
   });
 
-  it("readdirSyncエラー", async () => {
+  it("readdirSyncError", async () => {
     const key = "readdirSyncError";
-    //const cacheFilePath = getCacheFilePath(key);
-    await testIOError(key, "readdirSyncエラー", 'readdirSync', 
+    await testIOError(key, "readdirSyncError", 'readdirSync', 
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
@@ -287,13 +291,10 @@ describe('FileCache', () => {
           message: "Error!",
         }
       },
-      //() => {try { fs.unlinkSync(cacheFilePath) } catch (_) {;} },
     );
   });
 
-  // ロックエラー
-  it("ロックエラー", async () => {
-    // 故意にファイルを作り、エラーを誘う（tmpファイルでいいかも
+  it("Lock error.", async () => {
     const key = 'lockError';
     const lockPath = path.join(process.cwd(), '.lock', key + '.json.tmp');
     fs.writeFileSync(lockPath, "");
@@ -320,9 +321,7 @@ describe('FileCache', () => {
     }
   });
 
-  
-  // ★★★purge force: false で、不正キャッシュあり（有効判断）
-  it("purge({ force: false })で、不正キャッシュあり（有効判断）。", async () => {
+  it("purge({ force: false }); invalid cache files identified.", async () => {
     const key = "FileCache_purge_invalidCache";
     const key2 = "FileCache_purge_invalidCache2";
     try {
@@ -344,7 +343,6 @@ describe('FileCache', () => {
             });
           },
           async (_, cache: FileCache) => {
-            // 正常キャッシュは1個だけ
             expect(Object.keys(await cache.getAll()).length).toBe(1);
           }
         ]
@@ -355,8 +353,7 @@ describe('FileCache', () => {
     }
   });
 
-  // ★★★purge force: true、不正キャッシュあり（有効判断）
-  it("purge({ force: true })で、不正キャッシュあり（有効判断）。", async () => {
+  it("purge({ force: true }); invalid cache files identified.", async () => {
     const key = "FileCache_purge_invalidCache_force";
     const key2 = "FileCache_purge_invalidCache_force2";
     try {
@@ -378,7 +375,7 @@ describe('FileCache', () => {
             });
           },
           async (_, cache: FileCache) => {
-            // key2に対応するキャッシュファイルは削除されているはず。
+            // The cache file corresponding to key2 should have been deleted.
             expect(Object.keys(await cache.getAll()).length).toBe(0);
           }
         ]
@@ -391,11 +388,86 @@ describe('FileCache', () => {
 
   // ★★★purge force: false で、不正キャッシュあり（無効判断）
   // fs.utimesSync を使って、更新時間を過去に設定する。　不正ファイル削除モードにする。
+  //        const d = new Date(Date.now() - 2500);
+  //        fs.utimesSync(cachePath, d, d);
+  it("purge({ force: false }); old invalid cache files.", async () => {
+    const key = "FileCache_purge_oldInvalidCache";
+    const key2 = "FileCache_purge_oldInvalidCache2";
+    try {
+      await testInvalid(
+        key,
+        "",
+        async (cache: FileCache) => {
+          const d = new Date(Date.now() - 2500);
+          fs.utimesSync(getCacheFilePath(key), d, d);
+          await cache.set(key2, "dummy");
+          return await cache.purge({ force: false });
+        },
+        {},
+        [
+          (result: unknown) => {
+            const failures = result as Record<string, unknown>;
+            expect(failures).toBeUndefined();
+          },
+          async (_, cache: FileCache) => {
+            // The cache file corresponding to key2 should exist.
+            expect(Object.keys(await cache.getAll()).length).toBe(1);
+          }
+        ],
+        { removeInvalid: true, invalidTtlMs: 0 }
+      );
+    }
+    finally {
+      try {fs.unlinkSync(getCacheFilePath(key))} catch(_e){;};
+    }
+  });
 
-  // ★★★purge force: true、不正キャッシュあり（無効判断）
-  // fs.utimesSync を使って、更新時間を過去に設定する。　不正ファイル削除モードにする。
+  it("purge({ force: true }); old invalid cache files.", async () => {
+    const key = "FileCache_purge_oldInvalidCache_force";
+    const key2 = "FileCache_purge_oldInvalidCache_force2";
+    try {
+      await testInvalid(
+        key,
+        "",
+        async (cache: FileCache) => {
+          const d = new Date(Date.now() - 2500);
+          fs.utimesSync(getCacheFilePath(key), d, d);
+          await cache.set(key2, "dummy");
+          return await cache.purge({ force: true });
+        },
+        {},
+        [
+          (result: unknown) => {
+            const failures = result as Record<string, unknown>;
+            expect(failures).toBeUndefined();
+          },
+          async (_, cache: FileCache) => {
+            // The cache file corresponding to key2 should exist.
+            expect(Object.keys(await cache.getAll()).length).toBe(0);
+          }
+        ],
+        { removeInvalid: true, invalidTtlMs: 0 }
+      );
+    }
+    finally {
+      try {fs.unlinkSync(getCacheFilePath(key))} catch(_e){;};
+    }
+  });
 
-  // ★★★purge で、unlinkSync error
-  // これは、即時エラーで良いでしょうね。。それとも、failuresに記録する？？　どっちが良いかな？？
+  it("purge({ force: true }), unlinkSync error.", async () => {
+    const key = "purge_unlinkSyncError";
+    await testIOError(key, "purge_unlinkSyncError", 'unlinkSync', (_args: unknown[]) => {
+      throw Object.assign(new Error("Error!"), { code: "EHOGE" });
+    }, null, async (cache: FileCache) => {
+      await cache.set(key, 123456);
+      const f = await cache.purge( { force: true });
+      expect(f != null && f[key] !== undefined).toBeTruthy();
+      expect((f as Record<string, unknown>)[key]).toMatchObject({
+        code: "EHOGE",
+        key,
+        message:"Failed to remove `cache file`."
+      })
+    }, 2);
+  });
   
 });

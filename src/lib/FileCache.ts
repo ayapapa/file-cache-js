@@ -279,7 +279,7 @@ export class FileCache {
   public async remove(key: string) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
-      if (await this.#get(key) === undefined) return; // no action.
+      //if (await this.#get(key) === undefined) return; valueが、`undefined`であるものが削除対象外になるので、ここでのチェックは不具合.
       return this.#remove(key);
     }) as Promise<void>;
   }
@@ -303,10 +303,13 @@ export class FileCache {
     if (cached.expiresAt === undefined) {
       throw new InvalidCache(null, { key, cause: 'No `expiresAt`' } );
     }
+    return cached;
+/*
     if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
       return cached.value; // 有効値
     }
     return undefined;
+*/
   }
 
   /**
@@ -325,22 +328,27 @@ export class FileCache {
     if (contents === undefined) return undefined;
 
     try {
-      return this.#parse(contents, key);
+      const cached = this.#parse(contents, key);
+      if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
+        return cached.value; // 有効値
+      }
     }
     catch (err) {
-      // 不正ファイル削除指示を確認し有効・無効判定
-      let expired = false;
-      if (this.#currentConfig.removeInvalid === true) {
-        // 更新時間をチェックし判定する
-        const stat = await this.#access(
-          key, 
-          () => fs.statSync(this.#getFilePath(key), { throwIfNoEntry: false }),
-          "Failed to get `cache file` information."
-        ) as fs.Stats | undefined;
-        expired = Boolean(stat && stat.mtimeMs + this.#currentConfig.invalidTtlMs <= Date.now())/* && await this.#remove(key)*/
+      // 解析失敗（不正ファイル）のため、削除指示を確認し有効・無効判定
+      if (this.#currentConfig.removeInvalid === false) {
+        throw err;
       }
-      if (expired === false) throw err;
+      // 更新時間をチェックし判定する
+      const stat = await this.#access(
+        key, 
+        () => fs.statSync(this.#getFilePath(key), { throwIfNoEntry: false }),
+        "Failed to get `cache file` information."
+      ) as fs.Stats | undefined;
+      if (stat === undefined || stat.mtimeMs + this.#currentConfig.invalidTtlMs > Date.now()) {
+        throw err;
+      }
     }
+
     // 有効期限切れのため削除
     await this.#remove(key); 
     return undefined;
@@ -406,10 +414,12 @@ export class FileCache {
   async #remove(key: string) {
     const path = this.#getFilePath(key)
     return this.#access(key, () => {
-      fs.existsSync(path) && fs.unlinkSync(path);
+      if (fs.existsSync(path)) {
+        fs.unlinkSync(path);
+      } 
     },
     "Failed to remove `cache file`."
-    );
+    ) as Promise<void>;
   }
 
   /**
@@ -488,10 +498,11 @@ export class FileCache {
   }
 
   /**
-   * 一定確率で古いキャッシュの一斉除去を行う 
+   * キャッシュの一斉除去を行う 
    * @param options オプション
    * - force: `boolean` `true`なら、不正キャッシュファイルを除き、すべて削除。
    * ただし、 不正`cache file`判定は、コンストラクト時の`Config`の`removeInvalid`および`invalidTtlMs`に依存する。(see also `Config`.)
+   * @returns 削除失敗となったキーとその原因。削除失敗がなければ、`undefined`.
    */
   public async purge(options?: { force?: boolean }) {
     if (this.#purging) return;
@@ -508,12 +519,6 @@ export class FileCache {
             failures[key] = err;
           }
         });
-        /*
-        // 強制削除
-        for (const key of keys) {
-          await this.remove(key);
-        }
-        */
       }
       else {
         // getすることで、古いものが削除される
@@ -525,13 +530,12 @@ export class FileCache {
             failures[key] = err;
           }
         });
-        //keys.forEach(async (key) => await this.get(key));
       }
     }
     finally {
       this.#purging = false;
     }
-    return failures;
+    return Object.keys(failures).length > 0 ? failures : undefined;
   }
 
   async #forAllKeys(action: (key: string) => Promise<void>) {
