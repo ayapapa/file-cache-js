@@ -215,7 +215,7 @@ export class FileCache {
   public async get(key: string) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, null, { code: 'EINVAL' });
     return this.#execute(key, async () => {
-        return await this.#get(key);
+        return (await this.#get(key)).value;
     });
   }
   /**
@@ -279,7 +279,11 @@ export class FileCache {
   public async remove(key: string) {
     REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
-      //if (await this.#get(key) === undefined) return; valueが、`undefined`であるものが削除対象外になるので、ここでのチェックは不具合.
+      // '#get'することで、余分なファイルの削除をさせる。
+      // '#get'で有効と判定されたファイルは、'#remove'で削除する。
+      // ただし、'value'そのものが`undefined`のケース(res.value === undefined && reason==='ASIS')もある。
+      const res = await this.#get(key);
+      if (res.value === undefined && res.reason !== 'ASIS') return;
       return this.#remove(key);
     }) as Promise<void>;
   }
@@ -304,20 +308,15 @@ export class FileCache {
       throw new InvalidCache(null, { key, cause: 'No `expiresAt`' } );
     }
     return cached;
-/*
-    if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
-      return cached.value; // 有効値
-    }
-    return undefined;
-*/
   }
 
   /**
+   * @internal
    * キャッシュデータをファイルから取得する
    * @param key     キャッシュキー
    * @return 
    */
-  async #get(key: string) {
+  async #get(key: string): Promise<{ value: unknown, reason: 'NOTEXIST' | 'EXPIRED' | 'ASIS' }> {
     const filePath = this.#getFilePath(key);
     const contents = await this.#access(key, () => {
       if (!fs.existsSync(filePath)) return undefined;
@@ -325,20 +324,21 @@ export class FileCache {
     },
     "Failed to read `cache file`."
     ) as string | undefined;
-    if (contents === undefined) return undefined;
+    if (contents === undefined) return { value: undefined, reason: 'NOTEXIST' };
 
     try {
       const cached = this.#parse(contents, key);
       if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
-        return cached.value; // 有効値
+        return { value: cached.value, reason: 'ASIS' }; // 有効値
       }
     }
     catch (err) {
-      // 解析失敗（不正ファイル）のため、削除指示を確認し有効・無効判定
+      // Analysis failed (invalid file); checking deletion instructions 
+      // to determine whether to proceed with deletion.
       if (this.#currentConfig.removeInvalid === false) {
         throw err;
       }
-      // 更新時間をチェックし判定する
+      // Check and evaluate the file's modification time.
       const stat = await this.#access(
         key, 
         () => fs.statSync(this.#getFilePath(key), { throwIfNoEntry: false }),
@@ -349,12 +349,13 @@ export class FileCache {
       }
     }
 
-    // 有効期限切れのため削除
+    // Deleted due to expiration
     await this.#remove(key); 
-    return undefined;
+    return { value: undefined, reason: 'EXPIRED' };
   }
 
   /**
+   * @internal
    * キャッシュデータをファイルへ格納する
    * @param {string}  key     キャッシュキー
    * @param {{value: *, expiresAt: number}}       value   キャッシュする値
@@ -399,6 +400,7 @@ export class FileCache {
   }
 
   /**
+   * @internal
    * ファイルパスを取得する
    * @param {string}  key
    */
@@ -408,6 +410,7 @@ export class FileCache {
   }
 
   /**
+   * @internal
    * キャッシュデータをファイルへ格納する
    * @param  key     キャッシュキー
    */
@@ -423,6 +426,7 @@ export class FileCache {
   }
 
   /**
+  * @internal
   * 処理実行
   * @param  key `cache key`
   * @param  callback
@@ -447,8 +451,9 @@ export class FileCache {
 
 
   /**
+   * @internal
    * キャッシュデータ格納ディレクトリパスを取得する
-   * @returns {string}
+   * @returns
    */
   #getCacheDir() {
     // ディレクトリ探索方針（優先順位順）
@@ -508,8 +513,21 @@ export class FileCache {
     if (this.#purging) return;
     this.#purging = true;
     const failures = {} as Record<string, unknown>;
+    const exec = async (funcName: 'get' | 'remove') => {
+      return await this.#forAllKeys(async (key: string) => {
+        try {
+          await this[funcName](key);
+        }
+        catch (err) {
+          failures[key] = err;
+        }
+      });
+    }
     try {
-      //const keys = await this.#getAllKeys();
+      // 強制削除なら'remove'、さもなくば、'get'を利用する。
+      // 'get'なら、期限切れファイルは削除してくれる
+      await exec(options?.force ? 'remove' : 'get');
+      /*
       if (options?.force === true) {
         await this.#forAllKeys(async (key: string) => {
           try {
@@ -531,6 +549,7 @@ export class FileCache {
           }
         });
       }
+      */
     }
     finally {
       this.#purging = false;

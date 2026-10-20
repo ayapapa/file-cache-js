@@ -162,4 +162,8 @@ describe('FileCache', () => {
     await testSetGetTest(key, value);
   })
 
+  // purgeProbability: 1.0のテストを追加せよ
+  // 過去データをセット2回セットしても、最後キャッシュファイルだけ残る
+  // getすると無くなることもテストしても良いかも
+  
 });
