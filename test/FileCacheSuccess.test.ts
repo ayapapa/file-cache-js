@@ -47,49 +47,49 @@ describe('FileCache', () => {
       expect(statBefor.mtimeMs).toBe(statAfter.mtimeMs);
   }
 
-  it("キャッシュset&get(object).", async () => {
+  it("Cache set & get (object).", async () => {
     const key = "FileCache_setget_object";
     const value = { test: 1, hoge: "hello" };
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(number).", async () => {
+  it("Cache set & get (number).", async () => {
     const key = "FileCache_setget_number";
     const value = 1009;
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(boolean).", async () => {
+  it("Cache set & get (boolean).", async () => {
     const key = "FileCache_setget_boolean";
     const value = true;
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(string).", async () => {
+  it("Cache set & get (string).", async () => {
     const key = "FileCache_setget_string";
     const value = "wao!!";
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(array).", async () => {
+  it("Cache set & get (array).", async () => {
     const key = "FileCache_setget_array";
     const value = ["wao!!", 1234];
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(null).", async () => {
+  it("Cache set & get (null).", async () => {
     const key = "FileCache_setget_null";
     const value = null;
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(undefined).", async () => {
+  it("Cache set & get (undefined).", async () => {
     const key = "FileCache_setget_undefined";
     const value = undefined;
     await testSetGetTest(key, value);
   });
 
-  it("キャッシュset&get(expired).", async () => {
+  it("Cache set & get (expired).", async () => {
     const key = "FileCache_setget_expired";
     const value = "expired";
     const cache = new FileCache({ ttlMs: 100 });
@@ -101,7 +101,7 @@ describe('FileCache', () => {
     expect(fs.existsSync(getCacheFilePath(key))).toBeFalsy();
   });
 
-  it("キャッシュset&get withoutLock.", async () => {
+  it("Cache set & get  withoutLock.", async () => {
       const key = "FileCache_setget_withoutLock";
       const value = { test: 1, hoge: "hello" };
       await testSetGetTest(key, value, { withLock: false });
@@ -119,7 +119,7 @@ describe('FileCache', () => {
   });
 
 
-  it("purge()で、期限切れのキャッシュは削除される。", async () => {
+  it("Expired cache entries are removed by purge().", async () => {
     const key = "FileCache_purge_no_expire";
     const key2 = "FileCache_purge_short_expire";
     const value = "no expiration";
@@ -135,7 +135,7 @@ describe('FileCache', () => {
     expect(await cache.get(key2)).toBeUndefined();
   });
 
-  it("purge({ force: true })で、全てのキャッシュが削除される。", async () => {
+  it("`purge({ force: true })` deletes all caches.", async () => {
     const key = "FileCache_purge_no_expire";
     const key2 = "FileCache_purge_short_expire";
     const key3 = "FileCache_purge_undefined";
@@ -156,15 +156,12 @@ describe('FileCache', () => {
     expect(fs.existsSync(getCacheFilePath(key3))).toBeFalsy();
   });
 
-  it("キーにパス不正文字を入れてset&getする", async () => {
+  it("Include invalid characters for keys when performing set and get operations.", async () => {
     const key = 'FileCache_\\set""get_special:Key';
     const value = "キーにパス不正文字を入れてset&getする";
     await testSetGetTest(key, value);
   })
 
-  // purgeProbability: 1.0のテストを追加せよ
-  // 過去データをセット後に、次のセットしても、最初のファイルは存在しない
-  // getすると無くなることもテストしても良いかも
   it("purgeProbability: 1.0", async () => {
     const key = 'FileCache_purgeProbability1.0';
     const cachePath = getCacheFilePath(key);
@@ -173,7 +170,7 @@ describe('FileCache', () => {
     const cache = new FileCache({ purgeProbability: 1.0 });
     const data = { value: 1234, expiresAt: Date.now() - 1000 }
 
-    // 50回テストすれば十分だろう
+    // Fifty tests should be enough.
     for(let i = 0; i < 50; i++) {
       fs.writeFileSync(cachePath, JSON.stringify(data, null, '  '));
       await cache.set(key2, value);
