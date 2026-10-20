@@ -1,7 +1,7 @@
+# file-cache-js
+
 ## Table of contents
 [Overview](#overview) | [Definitions of Terms](#definitions-of-terms) | [Features](#features) | [Installation](#installation) | [API Reference](#api-reference) | [Usage](#usage) | [Configurations](#configurations) | [Errors](#errors) | [Examples](#examples)
-
-# file-cache-js
 
 ## Overview
 
