@@ -386,10 +386,6 @@ describe('FileCache', () => {
     }
   });
 
-  // ★★★purge force: false で、不正キャッシュあり（無効判断）
-  // fs.utimesSync を使って、更新時間を過去に設定する。　不正ファイル削除モードにする。
-  //        const d = new Date(Date.now() - 2500);
-  //        fs.utimesSync(cachePath, d, d);
   it("purge({ force: false }); old invalid cache files.", async () => {
     const key = "FileCache_purge_oldInvalidCache";
     const key2 = "FileCache_purge_oldInvalidCache2";

@@ -96,7 +96,7 @@ describe('FileCache', () => {
     await cache.set(key, value);
     await sleepAsync(150);
     expect.assertions(2);
-    // 期限切れのため取得できない
+    // Cannot be retrieved because it has expired.
     expect(await cache.get(key)).toBeUndefined();
     expect(fs.existsSync(getCacheFilePath(key))).toBeFalsy();
   });
@@ -158,7 +158,7 @@ describe('FileCache', () => {
 
   it("Include invalid characters for keys when performing set and get operations.", async () => {
     const key = 'FileCache_\\set""get_special:Key';
-    const value = "キーにパス不正文字を入れてset&getする";
+    const value = "Include invalid characters for keys when performing set and get operations.";
     await testSetGetTest(key, value);
   })
 

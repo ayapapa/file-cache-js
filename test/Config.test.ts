@@ -65,7 +65,7 @@ describe('FileCache', () => {
     try {
       const cache = new FileCache(conf);
       const curConf = cache.getConfig() as Record<string, unknown>;
-      expect(curConf[name]).toBe(/*exptected ?? */defaultConf[name])
+      expect(curConf[name]).toBe(defaultConf[name])
     }
     catch (err) {
       expect(err).instanceOf(FileCacheError);
