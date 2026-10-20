@@ -63,7 +63,7 @@ jobs:
           fi
 
       - name: Generate coverage badges
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.node-version == 24
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.node-version == '24.x'
         uses: jpb06/coverage-badges-action@latest
         with:
           coverage-summary-path: coverage/coverage-summary.json
