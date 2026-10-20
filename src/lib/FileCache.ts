@@ -582,12 +582,14 @@ export class FileCache {
 
 }
 
-// キャッシュエラー
+/**
+ * File cache error.
+ */
 export class FileCacheError extends Error {
   /**
-   * コンストラクタ。
+   * Constructor.
    * @param msg   Error message.
-   * @param param Parameters。
+   * @param param Parameters.
    */
   constructor(msg: string, param?: { code: string, cause?: unknown, key?: string }) { 
     super(msg);
@@ -597,12 +599,15 @@ export class FileCacheError extends Error {
   }
 };
 
+/**
+ * Invalid cache error.
+ */
 export class InvalidCache extends FileCacheError {
   static #defaultMsg: string = "Found an invalid `cache file`.";
   /**
-   * コンストラクタ。
+   * Constructor.
    * @param msg   Error message. If null, use a default message("Found an invalid `cache file`.").
-   * @param param Parameters。
+   * @param param Parameters.
    */
   constructor(msg: string | null = InvalidCache.#defaultMsg, param?: { cause?: unknown, key?: string } ) { 
     msg = msg || InvalidCache.#defaultMsg;
