@@ -6,7 +6,7 @@
 
 # Class: FileCache
 
-Defined in: [src/lib/FileCache.ts:126](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L126)
+Defined in: [src/lib/FileCache.ts:126](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L126)
 
 A cache service class that uses files. 
 
@@ -27,7 +27,7 @@ and removing double quotation marks.
 
 > **new FileCache**(`config?`): `FileCache`
 
-Defined in: [src/lib/FileCache.ts:182](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L182)
+Defined in: [src/lib/FileCache.ts:182](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L182)
 
 Constructor.
 
@@ -51,7 +51,7 @@ If a null-like value (null or undefined) is provided, it is treated as if the va
 
 > **get**(`key`): `Promise`\<`unknown`\>
 
-Defined in: [src/lib/FileCache.ts:215](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L215)
+Defined in: [src/lib/FileCache.ts:215](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L215)
 
 Get the `cache value` corresponding to the `cache key`.
 
@@ -84,7 +84,7 @@ the `set` operation (or `undefined` if no `cache key' exists for the given 'cach
 
 > **getAll**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/lib/FileCache.ts:234](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L234)
+Defined in: [src/lib/FileCache.ts:234](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L234)
 
 Get all `cache key`s and their corresponding `cache value`s. 
 Expired cache entries are listed with a value of `undefined`.
@@ -119,7 +119,7 @@ A promise that resolves to the retrieved `cache key`s and `cache value`s (in the
 
 > **getConfig**(): `Required`\<[`Config`](../interfaces/Config.md)\>
 
-Defined in: [src/lib/FileCache.ts:257](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L257)
+Defined in: [src/lib/FileCache.ts:257](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L257)
 
 Get the current configurations.
 
@@ -135,7 +135,7 @@ Copy of the current configurations.
 
 > **purge**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:268](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L268)
+Defined in: [src/lib/FileCache.ts:268](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L268)
 
 Perform a mass removal of the cash.
 
@@ -163,7 +163,7 @@ An object containing the keys that failed to be deleted and the reasons for the 
 
 > **remove**(`key`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:303](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L303)
+Defined in: [src/lib/FileCache.ts:303](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L303)
 
 Remove the `cache file` corresponding to a given `cache key`. 
 If the `cache file` is considered invalid, it is deleted according to the `removeInvalid` 
@@ -192,7 +192,7 @@ and `invalidTtlMs` settings, resulting in either a return value of `undefined` o
 
 > **set**(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:332](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L332)
+Defined in: [src/lib/FileCache.ts:332](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L332)
 
 Store `cache key' and `cache value` ​​in a `cache file`. 
 If a `cache file` with the same 'cache key' already exists, it will be overwritten.
@@ -237,7 +237,7 @@ that can be serialized to JSON before the caching process.
 
 > `static` **getDefaultConf**(): `object`
 
-Defined in: [src/lib/FileCache.ts:152](https://github.com/ayapapa/file-cache-js/blob/ae9148b284056e87c1c2c530231ffa7901d348a9/src/lib/FileCache.ts#L152)
+Defined in: [src/lib/FileCache.ts:152](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L152)
 
 Static methods.
 

@@ -8,7 +8,7 @@
 # file-cache-js
 
 ## Table of contents
-[Overview](#overview) | [Definitions of Terms](#definitions-of-terms) | [Features](#features) | [Installation](#installation) | [API Reference](#api-reference) | [Usage](#usage) | [Configurations](#configurations) | [Errors](#errors) | [Examples](#examples)
+[Overview](#overview) | [Definitions of Terms](#definitions-of-terms) | [Features](#features) | [Installation](#installation) | [API Reference](#api-reference) | [Usage](#usage) | [Configurations](#configurations) | [Errors](#errors)
 
 ## Overview
 
@@ -48,15 +48,16 @@ npm install @ayapapa-npm/file-cache-js
 [API document](https://github.com/ayapapa/file-cache-js/blob/main/docs/api.md)
 
 ## Usage
-  ```js
-
-
-  const ret = await FileLock.withLock(
-    "Specify the lock key.", 
-    () => { // Callback function to execute while locked
-      "Describes the operations to be performed while the lock is held.";
-      return "Specify the results if any.";
-    },
-  );
-  console.log(ret); // "Specify the results if any."
+  ```ts
+  const key = "hoge";
+  const value = { hoge: "hoge" };
+  const cache = new FileCache();
+  await cache.set(key, value);
+  console.log(await cache.get(key)); // { hoge: 'hoge' }
   ```
+
+## Errors
+| Class name | Overview | Message | Other key properties | Recommended action |
+|---|---|---|---|---|
+| `InvalidCache` | Invalid cache information. | `Found an invalid cache file.` | `{ code: "EINVALIDCACHE" }` | Identify the source of the invalid cache and delete the affected cache file. |
+| `FileCacheError` | A file cache operation failed. | — | `{ code: <reason> }` | Handle the error based on the `reason` code. |
