@@ -53,8 +53,10 @@ npm install @ayapapa-npm/file-cache-js
   const value = { hoge: "hoge" };
   const cache = new FileCache();
   await cache.set(key, value);
-  console.log(await cache.get(key)); // { hoge: 'hoge' }
+  const res = await cache.get(key);
+  console.log(res); // { hoge: 'hoge' }
   ```
+  ** Don't forget `await`! **
 
 ## Errors
 | Class name | Overview | Message | Other key properties | Recommended action |
