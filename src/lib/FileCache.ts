@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createContracts } from "@ayapapa-npm/contracts-js";
-import { FileLock } from "@ayapapa-npm/file-locking-js";
+import { FileLock } from "@ayapapa-npm/file-lock-js";
 const  { REQUIRE } = createContracts();
 
 /** 
@@ -42,13 +42,23 @@ export interface Config {
    * Cache directory. 
    * Default is "`process.cwd()`/.cache".   
    */
-  cacheDir?: string;
+  cacheDirectory?: string;
 
   /**
    * Specifies whether to apply exclusive control to cache file I/O operations 
    * during `get`, `set`, or `remove` actions. This helps avoid conflicts with other processes.
   */
   withLock?: boolean;
+
+  /**
+   * Specifies the directory path to stored locking imformations.
+   * If it has been specified, use this as the top priority.
+   * The directory is determined based on the following order of priority:<br>
+   *  1. Specified via an `Config` (user's explicit intent)
+   *  2. "`process.cwd()`/.lock" (".lock" under `current working directory at runtime`)
+   * Note: In cases where the directory is explicitly specified (1 or 2 above), an error occurs if the specified directory does not exist and its creation fails.
+   */
+  lockDirectory?: string | null;
 
   /**
    * Maximum wait time to acquire the lock [milliseconds]. <br>
@@ -126,8 +136,9 @@ export class FileCache {
     ttlMs:              10 * 60 * 1000,
     retriesOnIoErr:     1,
     retryIoIntervalMs:  100,
-    cacheDir:           path.join(process.cwd(), '.cache'),
+    cacheDirectory:     path.join(process.cwd(), '.cache'),
     withLock:           true,
+    lockDirectory:      path.join(process.cwd(), '.lock'),
     lockTimeoutMs:      1000,
     lockTtlMs:          1000,
     purgeProbability:   0.1,
@@ -181,7 +192,7 @@ export class FileCache {
       this.#currentConfig.lockTimeoutMs = Math.max(this.#currentConfig.lockTimeoutMs, 0);
       this.#currentConfig.lockTtlMs = Math.max(this.#currentConfig.lockTtlMs, 1000);
       this.#currentConfig.purgeProbability = Math.min(Math.max(this.#currentConfig.purgeProbability, 0), 1.0);
-      this.#currentConfig.cacheDir = this.#getCacheDir();
+      this.#currentConfig.cacheDirectory = this.#getCacheDir();
       this.#currentConfig.invalidTtlMs = Math.max(this.#currentConfig.invalidTtlMs, 0);
     }
   }
@@ -222,8 +233,7 @@ export class FileCache {
     const ret = {} as Record<string, unknown>;
     await this.#forAllKeys(async (key: string) => {
       try {
-        const value = await this.get(key);
-        /*if (value !== undefined) */ret[key] = value;
+        ret[key] = await this.get(key);
       }
       catch (err) {
         if (err instanceof InvalidCache === false || throwIfInvalid == true) {
@@ -266,6 +276,7 @@ export class FileCache {
         }
       });
     }
+    
     try {
       // Use 'remove' for a forced deletion; otherwise, use 'get'.
       // With 'get', expired files are automatically deleted.
@@ -441,7 +452,7 @@ export class FileCache {
    * @throws `FileCacheError` If IO error.
    */
   async #getAllKeys() {
-    const dir = this.#currentConfig.cacheDir;
+    const dir = this.#currentConfig.cacheDirectory;
     const list = await this.#access(null, 
       () => fs.readdirSync(dir, { withFileTypes: true }), 
       "Failed to read `cache directory` information."
@@ -460,7 +471,7 @@ export class FileCache {
     // 1. Specified directory
     // 2. Working directory (`process.cwd()`)/.cache
     const candidates = [
-      () => this.#currentConfig.cacheDir,
+      () => this.#currentConfig.cacheDirectory,
       () => path.join(process.cwd(), '.cache'),
     ];
 
@@ -486,7 +497,7 @@ export class FileCache {
    */
   #getFilePath(key: string) {
     const encodedKey = key.replace(/[<>:/\\|?*]/g, () => '_').replace(/"/g, () => '');
-    return path.join(this.#currentConfig.cacheDir, `${encodedKey}.json`)
+    return path.join(this.#currentConfig.cacheDirectory, `${encodedKey}.json`)
   }
 
   /**

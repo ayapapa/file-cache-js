@@ -21,7 +21,8 @@ describe('FileCache', () => {
       ttlMs:              10 * 60 * 1000,
       retriesOnIoErr:     1,
       retryIoIntervalMs:  100,
-      cacheDir:           path.join(process.cwd(), '.cache'),
+      cacheDirectory:     path.join(process.cwd(), '.cache'),
+      lockDirectory:      path.join(process.cwd(), '.lock'),
       withLock:           true,
       lockTimeoutMs:      1000,
       lockTtlMs:          1000,
@@ -167,28 +168,28 @@ describe('FileCache', () => {
   });
 
 
-  it("null cacheDir", () => {
-    testInvalidConf("cacheDir", null);
+  it("null cacheDirectory", () => {
+    testInvalidConf("cacheDirectory", null);
   });
 
-  it("undefined cacheDir", () => {
-    testInvalidConf("cacheDir", undefined);
+  it("undefined cacheDirectory", () => {
+    testInvalidConf("cacheDirectory", undefined);
   });
 
-  it("number cacheDir", () => {
-    testInvalidConf("cacheDir", 1234);
+  it("number cacheDirectory", () => {
+    testInvalidConf("cacheDirectory", 1234);
   });
 
-  it("boolean cacheDir", () => {
-    testInvalidConf("cacheDir", false);
+  it("boolean cacheDirectory", () => {
+    testInvalidConf("cacheDirectory", false);
   });
 
-  it("object cacheDir", () => {
-    testInvalidConf("cacheDir", { hoge: 123 });
+  it("object cacheDirectory", () => {
+    testInvalidConf("cacheDirectory", { hoge: 123 });
   });
 
-  it("array cacheDir", () => {
-    testInvalidConf("cacheDir", [ 0, 1, "eee" ]);
+  it("array cacheDirectory", () => {
+    testInvalidConf("cacheDirectory", [ 0, 1, "eee" ]);
   });
 
 
@@ -217,6 +218,30 @@ describe('FileCache', () => {
   });
 
   
+  it("null lockDirectory", () => {
+    testInvalidConf("lockDirectory", null);
+  });
+
+  it("undefined lockDirectory", () => {
+    testInvalidConf("lockDirectory", undefined);
+  });
+
+  it("number lockDirectory", () => {
+    testInvalidConf("lockDirectory", 1234);
+  });
+
+  it("boolean lockDirectory", () => {
+    testInvalidConf("lockDirectory", false);
+  });
+
+  it("object lockDirectory", () => {
+    testInvalidConf("lockDirectory", { hoge: 123 });
+  });
+
+  it("array lockDirectory", () => {
+    testInvalidConf("lockDirectory", [ 0, 1, "eee" ]);
+  });
+
   it("null lockTimeoutMs", () => {
     testInvalidConf("lockTimeoutMs", null);
   });
@@ -358,29 +383,29 @@ describe('FileCache', () => {
   });
 
   it("Specifying a cache directory (successful case).", () => {
-    const cacheDir = path.join(process.cwd(), '.cache', 'test');
-    const config: Config = { cacheDir };
+    const cacheDirectory = path.join(process.cwd(), '.cache', 'test');
+    const config: Config = { cacheDirectory };
     try {
       new FileCache(config);
-      expect(fs.existsSync(cacheDir)).toBeTruthy();
+      expect(fs.existsSync(cacheDirectory)).toBeTruthy();
     }
     finally {
-      fs.rmSync(cacheDir, { recursive: true });
+      fs.rmSync(cacheDirectory, { recursive: true });
     }
   });
 
   it("Specifying a cache directory (failed case).", () => {
-    const cacheDir = path.join(process.cwd(), '.cache', 'test2');
-    fs.writeFileSync(cacheDir, "");
-    const config: Config = { cacheDir };
+    const cacheDirectory = path.join(process.cwd(), '.cache', 'test2');
+    fs.writeFileSync(cacheDirectory, "");
+    const config: Config = { cacheDirectory };
     expect.assertions(2);
     try {
       const cache = new FileCache(config);
-      expect(fs.existsSync(cacheDir)).toBeTruthy();
-      expect(cache.getConfig().cacheDir).toBe(path.join(process.cwd(), '.cache'));
+      expect(fs.existsSync(cacheDirectory)).toBeTruthy();
+      expect(cache.getConfig().cacheDirectory).toBe(path.join(process.cwd(), '.cache'));
     }
     finally {
-      fs.rmSync(cacheDir, { recursive: true });
+      fs.rmSync(cacheDirectory, { recursive: true });
     }
   });
 
@@ -391,7 +416,7 @@ describe('FileCache', () => {
     fs.writeFileSync(dir, "");
     expect.assertions(2);
     try {
-      new FileCache({ cacheDir: undefined } as unknown as Config);
+      new FileCache({ cacheDirectory: undefined } as unknown as Config);
     }
     catch (err) {
       expect(err).instanceOf(FileCacheError);

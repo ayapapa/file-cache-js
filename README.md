@@ -38,7 +38,25 @@ Consequently, it allows for tasks such as temporarily caching the results of req
 - Employs file locking (via an external library) to manage exclusive access and prevent file I/O conflicts between processes.
 - Includes resilience against corrupted or invalid files (with options to detect and report errors, or to automatically delete such files based on configuration during initialization).
 - Features a retry mechanism for file I/O errors (with configurable retry counts and intervals).
- 
+
+## Installation
+```bash
+npm install @ayapapa-npm/file-cache-js
+```
+
 ## API Reference
 [API document](https://github.com/ayapapa/file-cache-js/blob/main/docs/api.md)
 
+## Usage
+  ```js
+
+
+  const ret = await FileLock.withLock(
+    "Specify the lock key.", 
+    () => { // Callback function to execute while locked
+      "Describes the operations to be performed while the lock is held.";
+      return "Specify the results if any.";
+    },
+  );
+  console.log(ret); // "Specify the results if any."
+  ```
