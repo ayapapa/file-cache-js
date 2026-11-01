@@ -45,8 +45,8 @@
     "prettyLog": "powershell -Command \"Get-Content ./logs/file-lock.log | npx pino-pretty --translateTime 'SYS:standard'  --ignore 'pid,hostname' | Set-Content ./logs/pretty.log -Encoding utf8\"",
     "coverage": "vitest run --coverage",
     "coverage:ui": "vitest run --coverage && start coverage/index.html",
-    "check": "npm run typecheck && npm run lint && npm run build && npm run build:doc && npm run coverage",
-    "check:ui": "npm run typecheck && npm run lint && npm run build && npm run build:doc && npm run coverage:ui",
+    "check": "npm run typecheck && npm run lint && npm run build && npm run coverage",
+    "check:ui": "npm run typecheck && npm run lint && npm run build && npm run coverage:ui",
     "release:check": "npm run check",
     "prepublishOnly": "npm run release:check",
     "lint": "eslint ."
