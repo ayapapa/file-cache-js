@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileCache, FileCacheError, type Config } from '../src/index.ts';
+import { FileLock } from '@ayapapa-npm/file-lock-js';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -428,6 +429,32 @@ describe('FileCache', () => {
     finally {
       fs.unlinkSync(dir);
       fs.renameSync(dirBu, dir);
+    }
+  });
+
+  it("Specifying a lock directory (successful case).", async () => {
+    const lockDirectory = path.join(process.cwd(), '.lock', 'test');
+    const config: Config = { lockDirectory, withLock: true };
+    const orgC = FileLock.setConfig;
+    let called = false;
+    const spyC = vi.spyOn(FileLock, 'setConfig').mockImplementation((config) => {
+      return orgC(config);
+    });
+    const orgFn = FileLock.withLock;
+    const spy = vi.spyOn(FileLock, 'withLock').mockImplementation(async (key, operation, options) => {
+      called = true;
+      return await orgFn(key, operation, options);
+    });
+    try {
+      const cache = new FileCache(config);
+      await cache.set("test", "value");
+      expect(called).toBeTruthy();
+      expect(fs.existsSync(lockDirectory)).toBeTruthy();
+    }
+    finally {
+      spyC.mockRestore();
+      spy.mockRestore();
+      fs.rmSync(lockDirectory, { recursive: true });
     }
   });
 

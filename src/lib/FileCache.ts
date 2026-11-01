@@ -195,6 +195,9 @@ export class FileCache {
       this.#currentConfig.cacheDirectory = this.#getCacheDir();
       this.#currentConfig.invalidTtlMs = Math.max(this.#currentConfig.invalidTtlMs, 0);
     }
+    if (this.#currentConfig.withLock) {
+      FileLock.setConfig({ lockDirectory: this.#currentConfig.lockDirectory });
+    }
   }
 
   /**
