@@ -17,32 +17,17 @@ export async function sleepAsync(ms: number) {
  */
 export interface Config {
   /**
-   * Cache validity period (milliseconds)
-   * If a value of `0` or less is specified, there is no expiration date.
-   * The default is `600000`', which means 10 minutes.
-   * Min is `0`.
-   */
-  ttlMs?: number,
-
-  /**
-  * Number of retries in the event of an I/O error. 
-  * Default is `1`. 
-  * Min is `0`. If a negative value is specified, it will be adjusted to the minimum.   
-  */
-  retriesOnIoErr?: number;
-
-  /**
-   * Retry interval for IO errors (in milliseconds)
-   * Default is `100`. 
-   * Min is `100`. Values ​​below the minimum will be adjusted to the minimum.
-   */
-  retryIoIntervalMs?: number,
-
-  /**
    * Cache directory. 
    * Default is "`process.cwd()`/.cache".   
    */
   cacheDirectory?: string;
+
+  /**
+   * Cache validity period (milliseconds)
+   * If a value of `0` or less is specified, there is no expiration.
+   * The default is `600000`', which means 10 minutes.
+   */
+  ttlMs?: number,
 
   /**
    * Specifies whether to apply exclusive control to cache file I/O operations 
@@ -58,7 +43,7 @@ export interface Config {
    *  2. "`process.cwd()`/.lock" (".lock" under `current working directory at runtime`)
    * Note: In cases where the directory is explicitly specified (1 or 2 above), an error occurs if the specified directory does not exist and its creation fails.
    */
-  lockDirectory?: string | null;
+  lockDirectory?: string;
 
   /**
    * Maximum wait time to acquire the lock [milliseconds]. <br>
@@ -86,6 +71,20 @@ export interface Config {
   purgeProbability?: number;
 
   /**
+  * Number of retries in the event of an I/O error. 
+  * Default is `1`. 
+  * Min is `0`. If a negative value is specified, it will be adjusted to the minimum.   
+  */
+  retriesOnIoErr?: number;
+
+  /**
+   * Retry interval for IO errors (in milliseconds)
+   * Default is `100`. 
+   * Min is `100`. Values ​​below the minimum will be adjusted to the minimum.
+   */
+  retryIoIntervalMs?: number,
+
+  /**
    * Specifies whether to remove invalid cache files.
    * See also `invalidTtlMs`.
    */
@@ -93,9 +92,9 @@ export interface Config {
 
   /**
    * Validity period in milliseconds for the modification time of invalid `cache file`. <br>
-   * If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly deleted. 
+   * If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly removed. 
    * Minimum is `0` if a value lower than this is specified, this minimum value is used. 
-   * Default is `10000`.
+   * Default is `600000`.
    */
   invalidTtlMs?: number,
 };
@@ -143,7 +142,7 @@ export class FileCache {
     lockTtlMs:          1000,
     purgeProbability:   0.1,
     removeInvalid:      false,
-    invalidTtlMs:       10000,
+    invalidTtlMs:       600000,
   }
 
   /**
@@ -213,7 +212,7 @@ export class FileCache {
    * - `FileCacheError` If invalid `cache key', file IO error, or lock error.
    */
   public async get(key: string) {
-    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, null, { code: 'EINVAL' });
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", FileCacheError, null, { code: 'EINVAL' });
     return this.#execute(key, async () => {
         return (await this.#get(key)).value;
     });
@@ -301,7 +300,7 @@ export class FileCache {
    * - `FileCacheError` If invalid `cache key', file IO error, or lock error.
    */
   public async remove(key: string) {
-    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
       // Use '#get' to identify files for deletion. 
       // Files determined to be eligible via '#get' are then deleted using '#remove'. 
@@ -330,7 +329,7 @@ export class FileCache {
    * @throws  `FileCacheError` If invalid `cache key', file IO error, or lock error.
    */
   public async set(key: string, value: unknown, options?: { ttlMs?: number }) {
-    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid key.", FileCacheError, { code: 'EINVAL', key });
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", FileCacheError, { code: 'EINVAL', key });
     return this.#execute(key, async () => {
       const ttlMs = options?.ttlMs ?? this.#currentConfig.ttlMs;
       const expiresAt = ttlMs > 0 ? Date.now() + ttlMs : 0;
@@ -474,19 +473,22 @@ export class FileCache {
     // 1. Specified directory
     // 2. Working directory (`process.cwd()`)/.cache
     const candidates = [
-      () => this.#currentConfig.cacheDirectory,
-      () => path.join(process.cwd(), '.cache'),
-    ];
+      [this.#currentConfig.cacheDirectory, true],
+      [path.join(process.cwd(), '.cache'), false]
+    ] as const;
 
-    for (const getDir of candidates) {
-      let dir = getDir();
+    for (const [dir, required] of candidates) {
       try {
-        dir = path.resolve(dir);
-        if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return dir;
-        fs.mkdirSync(dir, { recursive: true });
-        return dir;
+        if (dir === undefined || dir === null || dir.length === 0) continue;
+        const rDir = path.resolve(dir);
+        if (fs.existsSync(rDir) && fs.statSync(rDir).isDirectory()) return rDir;
+        fs.mkdirSync(rDir, { recursive: true });
+        return rDir;
       }
       catch (err) {
+        if (required) {
+          throw new FileCacheError("Failed to create the cache data storage directory.", { code: 'ECREATECACHEDIR', cause: err });
+        }
         continue;
       }
     }

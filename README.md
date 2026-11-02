@@ -58,8 +58,26 @@ npm install @ayapapa-npm/file-cache-js
   ```
   ** Don't forget `await`! **
 
+## Configurations
+| Name | Type | Default and Min | Description | Notes |
+|---|---|---:|---|---|
+| `cacheDirectory` | `string` | `${process.cwd()}/.cache` N/A | Directory used to store `cache file`s. | Set to `false` to disable caching. |
+| `ttlMs` | `number` | `600000` `0` | Cache expiration time in milliseconds. | If a value of `0` or less is specified, there is no expiration. |
+| `withLock` | `boolean` | `true` N/A | Specifies whether to apply exclusive control to cache file I/O operations. |  |
+| `lockDirectory` | `string` | `${process.cwd()}/.lock` N/A | Directory used to store lock information. |  |
+| `lockTimeoutMs` | `number` | `1000` `0` | Maximum time to wait for acquiring the lock, in milliseconds. | Cannot be used with `timeoutSec`. `0` means no waiting. Values below `0` are treated as `0`. |
+| `lockttlMs` | `number` | `1000` `1000` | Lock time to live in milliseconds. | Values below `1000` are treated as `1000`. |
+| `purgeProbability` | `number` | `0.1` `0` | The probability (rate) at which old cache entries are removed. | The maximum is `1.0`. |
+| `retriesOnIoErr` | `number` | `1` `0` | Number of retries for `cache file` operations after I/O errors. | Values below `0` are treated as `0`. |
+| `retryIoIntervalMs` | `number` | `100` `100` | Retry interval in milliseconds after I/O errors. | Values below `100` are treated as `100`. |
+| `removeInvalid` | `boolean` | `false` N/A | Specifies whether to remove invalid `cache file`s. | Note: Ensure that there is no impact on other processes before proceeding. |
+| `invalidTtlMs` | `number` | `600000` `0` | Validity period in milliseconds for the modification time of invalid `cache file`. | If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly removed.  |
+
+
 ## Errors
 | Class name | Overview | Message | Other key properties | Recommended action |
 |---|---|---|---|---|
-| `InvalidCache` | Invalid cache information. | `Found an invalid cache file.` | `{ code: "EINVALIDCACHE" }` | Identify the source of the invalid cache and delete the affected cache file. |
-| `FileCacheError` | A file cache operation failed. | — | `{ code: <reason> }` | Handle the error based on the `reason` code. |
+| `InvalidCache` | Invalid cache information. | Found an invalid cache file. | `{ code: "EINVALIDCACHE" }` | Identify the source of the invalid cache and delete the affected cache file. |
+| `FileCacheError` | A file cache operation failed. | Invalid `cache key`. | `{ code: "EINVAL" }` | Specify valid `cache key`. |
+| `FileCacheError` | A file cache operation failed. | Failed to acquire the lock. | `{ code: "ELOCK" }` | Increase the value of `lockTimeoutMs`. |
+| `FileCacheError` | A file cache operation failed. | Failed to create the cache data storage directory. | `{ code: "ECREATECACHEDIR" }` | Specify valid `cache directory`. |

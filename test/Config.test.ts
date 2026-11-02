@@ -401,9 +401,14 @@ describe('FileCache', () => {
     const config: Config = { cacheDirectory };
     expect.assertions(2);
     try {
-      const cache = new FileCache(config);
-      expect(fs.existsSync(cacheDirectory)).toBeTruthy();
-      expect(cache.getConfig().cacheDirectory).toBe(path.join(process.cwd(), '.cache'));
+      new FileCache(config);
+    }
+    catch (err) {
+      expect(err).instanceOf(FileCacheError);
+      expect(err).toMatchObject({
+        code: "ECREATECACHEDIR",
+        message: "Failed to create the cache data storage directory.",
+      });
     }
     finally {
       fs.rmSync(cacheDirectory, { recursive: true });
@@ -417,7 +422,7 @@ describe('FileCache', () => {
     fs.writeFileSync(dir, "");
     expect.assertions(2);
     try {
-      new FileCache({ cacheDirectory: undefined } as unknown as Config);
+      new FileCache({ cacheDirectory: "" } as unknown as Config);
     }
     catch (err) {
       expect(err).instanceOf(FileCacheError);

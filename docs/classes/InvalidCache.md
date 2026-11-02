@@ -6,7 +6,7 @@
 
 # Class: InvalidCache
 
-Defined in: [src/lib/FileCache.ts:626](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L626)
+Defined in: [src/lib/FileCache.ts:628](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L628)
 
 Invalid cache error.
 
@@ -20,7 +20,7 @@ Invalid cache error.
 
 > **new InvalidCache**(`msg?`, `param?`): `InvalidCache`
 
-Defined in: [src/lib/FileCache.ts:633](https://github.com/ayapapa/file-cache-js/blob/7e21ec7986b46095f1ebeb2f6f22cf16b849ae05/src/lib/FileCache.ts#L633)
+Defined in: [src/lib/FileCache.ts:635](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L635)
 
 Constructor.
 
