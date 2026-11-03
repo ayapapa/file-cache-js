@@ -3,6 +3,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileCache, type Config } from '../src/index.ts';
 import { sleepAsync } from '../src/lib/FileCache.ts';
+import { getCacheDirPath, getCacheFilePath } from './TestCommon.ts';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -16,10 +17,6 @@ afterEach(async () => {
 
 describe('FileCache', () => {
 
-  function getCacheDirPath() {
-    return path.join(process.cwd(), '.cache');
-  }
-
   it("no chache dir", () => {
     const cacheDir = getCacheDirPath();
     fs.rmSync(cacheDir, { recursive: true, force: true });
@@ -27,10 +24,6 @@ describe('FileCache', () => {
     expect(cache).toBeDefined();
     expect(fs.existsSync(cacheDir)).toBeTruthy();
   });
-
-  function getCacheFilePath(key: string) {
-    return path.join(getCacheDirPath(), `${key}.json`);
-  }
 
   /**
    * Success Test for `set` and `get`.

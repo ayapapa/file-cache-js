@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FileCache, { FileCacheError, type Config } from '../src/index.ts';
+import { getCacheDirPath, getCacheFilePath } from './TestCommon.ts';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -19,10 +20,6 @@ type successCallback =
 
 describe('FileCache', () => {
 
-  function getCacheFilePath(key: string) {
-    return path.join(process.cwd(), '.cache', `${key}.json`);
-  }
-  
   /** Create a cache file with the specified content and perform a test. */
   async function testInvalid(
     key: string, 
@@ -168,17 +165,17 @@ describe('FileCache', () => {
   async function testIOError(
     key: string, 
     value: unknown, 
-    errFunc: 'readFileSync' | 'writeFileSync' | 'readdirSync' | 'existsSync' | 'unlinkSync', 
+    errFunc: 'readFileSync' | 'writeFileSync' | 'readdirSync' | 'existsSync' | 'unlinkSync' | 'mkdirSync', 
     mockCb: (args: unknown[]) => unknown,
     errObj: Record<string, unknown> | null,
     actionCb?: (cache: FileCache) => unknown,
     actionCbAssertions: number = 0,
   ) {
     const cacheFilePath = getCacheFilePath(key);
-    const cacheDirPath = path.join(process.cwd(), '.cache');
+    const cacheDirPath = getCacheDirPath();
     const orgFunc = fs[errFunc] as ((...args: unknown[]) => unknown);
     const spy = vi.spyOn(fs, errFunc).mockImplementation((...args: unknown[]) => {
-    const checkPath = errFunc === 'readdirSync' ? cacheDirPath : cacheFilePath;
+    const checkPath = (errFunc === 'readdirSync' || errFunc === 'mkdirSync') ? cacheDirPath : cacheFilePath;
       if (args[0] as string === checkPath)
         return mockCb(args);
       else 
@@ -209,6 +206,24 @@ describe('FileCache', () => {
       try { fs.unlinkSync(cacheFilePath) } catch (_) {;};
     }
   }
+
+  it("mkdirSync error.", async () => {
+    const cacheDir = getCacheDirPath();
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+    const key = "mkdirSyncError"
+    await testIOError(key, key, 'mkdirSync', 
+      (_args: unknown[]) => {
+        throw Object.assign(new Error("Error!"), { code: "EMKDIR" });
+      }, {
+        code: "ECREATECACHEDIR",
+        message: "Failed to create the cache data storage directory.",
+        cause: {
+          code: "EMKDIR",
+          message: "Error!",
+        }
+      },
+    );
+  });
 
   it("readFileSync error.", async () => {
     const key = "readFileSyncError";
