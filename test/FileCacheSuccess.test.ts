@@ -16,8 +16,20 @@ afterEach(async () => {
 
 describe('FileCache', () => {
 
+  function getCacheDirPath() {
+    return path.join(process.cwd(), '.cache');
+  }
+
+  it("no chache dir", () => {
+    const cacheDir = getCacheDirPath();
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+    const cache = new FileCache();
+    expect(cache).toBeDefined();
+    expect(fs.existsSync(cacheDir)).toBeTruthy();
+  });
+
   function getCacheFilePath(key: string) {
-    return path.join(process.cwd(), '.cache', `${key}.json`);
+    return path.join(getCacheDirPath(), `${key}.json`);
   }
 
   /**

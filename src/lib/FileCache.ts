@@ -32,6 +32,7 @@ export interface Config {
   /**
    * Specifies whether to apply exclusive control to cache file I/O operations 
    * during `get`, `set`, or `remove` actions. This helps avoid conflicts with other processes.
+   * Default is `true`. If set to `false`, exclusive control is not applied, which may lead to conflicts with other processes.
   */
   withLock?: boolean;
 
@@ -179,21 +180,16 @@ export class FileCache {
    * If a null-like value (null or undefined) is provided, it is treated as if the value had been omitted.
    */
   public constructor(config: Config = FileCache.#defaultConfig) {
-    if (config === FileCache.#defaultConfig) {
-      this.#currentConfig = { ...FileCache.#defaultConfig };
-    }
-    else {
-      const rConf = this.#resolvConf(config);
-      this.#currentConfig = { ...FileCache.#defaultConfig, ...rConf};
-      this.#currentConfig.ttlMs = Math.max(this.#currentConfig.ttlMs, 0);
-      this.#currentConfig.retriesOnIoErr = Math.max(this.#currentConfig.retriesOnIoErr, 0);
-      this.#currentConfig.retryIoIntervalMs = Math.max(this.#currentConfig.retryIoIntervalMs, 100);
-      this.#currentConfig.lockTimeoutMs = Math.max(this.#currentConfig.lockTimeoutMs, 0);
-      this.#currentConfig.lockTtlMs = Math.max(this.#currentConfig.lockTtlMs, 1000);
-      this.#currentConfig.purgeProbability = Math.min(Math.max(this.#currentConfig.purgeProbability, 0), 1.0);
-      this.#currentConfig.cacheDirectory = this.#getCacheDir();
-      this.#currentConfig.invalidTtlMs = Math.max(this.#currentConfig.invalidTtlMs, 0);
-    }
+    const rConf = this.#resolvConf(config);
+    this.#currentConfig = { ...FileCache.#defaultConfig, ...rConf};
+    this.#currentConfig.ttlMs = Math.max(this.#currentConfig.ttlMs, 0);
+    this.#currentConfig.retriesOnIoErr = Math.max(this.#currentConfig.retriesOnIoErr, 0);
+    this.#currentConfig.retryIoIntervalMs = Math.max(this.#currentConfig.retryIoIntervalMs, 100);
+    this.#currentConfig.lockTimeoutMs = Math.max(this.#currentConfig.lockTimeoutMs, 0);
+    this.#currentConfig.lockTtlMs = Math.max(this.#currentConfig.lockTtlMs, 1000);
+    this.#currentConfig.purgeProbability = Math.min(Math.max(this.#currentConfig.purgeProbability, 0), 1.0);
+    this.#currentConfig.cacheDirectory = this.#getCacheDir();
+    this.#currentConfig.invalidTtlMs = Math.max(this.#currentConfig.invalidTtlMs, 0);
     if (this.#currentConfig.withLock) {
       FileLock.setConfig({ lockDirectory: this.#currentConfig.lockDirectory });
     }
