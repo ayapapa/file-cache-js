@@ -321,7 +321,8 @@ export class FileCache {
    * If you wish to cache these values, please convert them into a format 
    * that can be serialized to JSON before the caching process.
    * @param options Options.
-   * - ttlMs: `number` type. Takes precedence over the configuration passed to the constructor.
+   * - ttlMs: `number` type. Takes precedence over the configuration passed to the constructor. 
+   * If a value of `0` or less is specified, there is no expiration.
    * @throws  `FileCacheError` If invalid `cache key', file IO error, or lock error.
    */
   public async set(key: string, value: unknown, options?: { ttlMs?: number }) {
