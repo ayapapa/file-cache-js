@@ -67,7 +67,7 @@
     "vitest": "^5.0.3"
   },
   "dependencies": {
-    "@ayapapa-npm/contracts-js": "^0.7.1",
+    "@ayapapa-npm/contracts-js": "^0.7.3",
     "@ayapapa-npm/file-lock-js": "^0.1.0-beta.1"
   },
   "allowScripts": {
