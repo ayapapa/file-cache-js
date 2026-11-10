@@ -27,8 +27,12 @@ describe('FileCache', () => {
       withLock:           true,
       lockTimeoutMs:      1000,
       lockTtlMs:          1000,
-      purgeProbability:   0.1
-    })
+      purgeProbability:   0.1,
+      _debug:             false,
+    });
+
+    expect(cache.getConfig()).toMatchObject(FileCache.getDefaultConf());
+
   });
 
   it("Min setting.", () => {

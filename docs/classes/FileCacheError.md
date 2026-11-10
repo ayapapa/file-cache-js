@@ -6,7 +6,7 @@
 
 # Class: FileCacheError
 
-Defined in: [src/lib/FileCache.ts:611](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L611)
+Defined in: [src/lib/FileCache.ts:680](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L680)
 
 File cache error.
 
@@ -24,7 +24,7 @@ File cache error.
 
 > **new FileCacheError**(`msg`, `param?`): `FileCacheError`
 
-Defined in: [src/lib/FileCache.ts:617](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L617)
+Defined in: [src/lib/FileCache.ts:686](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L686)
 
 Constructor.
 

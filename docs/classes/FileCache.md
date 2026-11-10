@@ -6,7 +6,7 @@
 
 # Class: FileCache
 
-Defined in: [src/lib/FileCache.ts:125](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L125)
+Defined in: [src/lib/FileCache.ts:126](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L126)
 
 A cache service class that uses files. 
 
@@ -27,7 +27,7 @@ and removing double quotation marks.
 
 > **new FileCache**(`config?`): `FileCache`
 
-Defined in: [src/lib/FileCache.ts:181](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L181)
+Defined in: [src/lib/FileCache.ts:182](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L182)
 
 Constructor.
 
@@ -51,7 +51,7 @@ If a null-like value (null or undefined) is provided, it is treated as if the va
 
 > **get**(`key`): `Promise`\<`unknown`\>
 
-Defined in: [src/lib/FileCache.ts:214](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L214)
+Defined in: [src/lib/FileCache.ts:209](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L209)
 
 Get the `cache value` corresponding to the `cache key`.
 
@@ -75,8 +75,11 @@ the `set` operation (or `undefined` if no `cache key' exists for the given 'cach
 
 #### Throws
 
-- `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
-- `FileCacheError` If invalid `cache key', file IO error, or lock error.
+[InvalidCache](InvalidCache.md)    If cache contents is not valid Json or, has not mandatory propaties.
+
+#### Throws
+
+[FileCacheError](FileCacheError.md)  If invalid `cache key', file IO error, or lock error.
 
 ***
 
@@ -84,7 +87,7 @@ the `set` operation (or `undefined` if no `cache key' exists for the given 'cach
 
 > **getAll**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/lib/FileCache.ts:233](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L233)
+Defined in: [src/lib/FileCache.ts:227](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L227)
 
 Get all `cache key`s and their corresponding `cache value`s. 
 Expired cache entries are listed with a value of `undefined`.
@@ -110,8 +113,11 @@ A promise that resolves to the retrieved `cache key`s and `cache value`s (in the
 
 #### Throws
 
-- `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
-- `FileCacheError` If file IO error, or lock error.
+[InvalidCache](InvalidCache.md)    If cache contents is not valid Json or, has not mandatory propaties.
+
+#### Throws
+
+[FileCacheError](FileCacheError.md)  If file IO error, or lock error.
 
 ***
 
@@ -119,7 +125,7 @@ A promise that resolves to the retrieved `cache key`s and `cache value`s (in the
 
 > **getConfig**(): `Required`\<[`Config`](../interfaces/Config.md)\>
 
-Defined in: [src/lib/FileCache.ts:256](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L256)
+Defined in: [src/lib/FileCache.ts:261](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L261)
 
 Get the current configurations.
 
@@ -135,7 +141,7 @@ Copy of the current configurations.
 
 > **purge**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:267](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L267)
+Defined in: [src/lib/FileCache.ts:274](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L274)
 
 Perform a mass removal of the cash.
 
@@ -157,13 +163,21 @@ Note that the determination of whether a cache file is "invalid" depends on the 
 
 An object containing the keys that failed to be deleted and the reasons for the failure; returns `undefined` if no deletions failed.
 
+#### Throws
+
+[InvalidCache](InvalidCache.md)    If cache contents is not valid Json or, has not mandatory propaties.
+
+#### Throws
+
+[FileCacheError](FileCacheError.md)  If invalid `cache key', file IO error, or lock error.
+
 ***
 
 ### remove()
 
 > **remove**(`key`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:302](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L302)
+Defined in: [src/lib/FileCache.ts:314](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L314)
 
 Remove the `cache file` corresponding to a given `cache key`. 
 If the `cache file` is considered invalid, it is deleted according to the `removeInvalid` 
@@ -183,8 +197,11 @@ and `invalidTtlMs` settings, resulting in either a return value of `undefined` o
 
 #### Throws
 
-- `InvalidCache` If contents is not valid Json or, has not mandatory propaties. 
-- `FileCacheError` If invalid `cache key', file IO error, or lock error.
+[InvalidCache](InvalidCache.md)    If cache contents is not valid Json or, has not mandatory propaties.
+
+#### Throws
+
+[FileCacheError](FileCacheError.md)  If invalid `cache key', file IO error, or lock error.
 
 ***
 
@@ -192,7 +209,7 @@ and `invalidTtlMs` settings, resulting in either a return value of `undefined` o
 
 > **set**(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:331](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L331)
+Defined in: [src/lib/FileCache.ts:344](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L344)
 
 Store `cache key' and `cache value` ​​in a `cache file`. 
 If a `cache file` with the same 'cache key' already exists, it will be overwritten.
@@ -218,8 +235,9 @@ correctly—they may be ignored, converted to `null` or an empty object, or resu
 If you wish to cache these values, please convert them into a format 
 that can be serialized to JSON before the caching process.
 @param options Options.
-- ttlMs: `number` type. Takes precedence over the configuration passed to the constructor.
-@throws  `FileCacheError` If invalid `cache key', file IO error, or lock error.
+- ttlMs: `number` type. Takes precedence over the configuration passed to the constructor. 
+If a value of `0` or less is specified, there is no expiration.
+@throws  {@link FileCacheError}  If invalid `cache key', file IO error, or lock error.
 
 ##### options?
 
@@ -235,103 +253,12 @@ that can be serialized to JSON before the caching process.
 
 ### getDefaultConf()
 
-> `static` **getDefaultConf**(): `object`
+> `static` **getDefaultConf**(): [`Config`](../interfaces/Config.md)
 
-Defined in: [src/lib/FileCache.ts:151](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L151)
+Defined in: [src/lib/FileCache.ts:152](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L152)
 
 Static methods.
 
 #### Returns
 
-##### cacheDirectory
-
-> **cacheDirectory**: `string`
-
-Cache directory. 
-Default is "`process.cwd()`/.cache".
-
-##### invalidTtlMs
-
-> **invalidTtlMs**: `number`
-
-Validity period in milliseconds for the modification time of invalid `cache file`. <br>
-If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly removed. 
-Minimum is `0` if a value lower than this is specified, this minimum value is used. 
-Default is `600000`.
-
-##### lockDirectory
-
-> **lockDirectory**: `string`
-
-Specifies the directory path to stored locking imformations.
-If it has been specified, use this as the top priority.
-The directory is determined based on the following order of priority:<br>
- 1. Specified via an `Config` (user's explicit intent)
- 2. "`process.cwd()`/.lock" (".lock" under `current working directory at runtime`)
-Note: In cases where the directory is explicitly specified (1 or 2 above), an error occurs if the specified directory does not exist and its creation fails.
-
-##### lockTimeoutMs
-
-> **lockTimeoutMs**: `number`
-
-Maximum wait time to acquire the lock [milliseconds]. <br>
-`0` does not wait for the preceding unlock. 
-The minimum value is `0`; if a value lower than this is specified, this minimum value is used.
-Default is `1000`.
-
-##### lockTtlMs
-
-> **lockTtlMs**: `number`
-
-Lock validity period (time to live): the maximum time [milliseconds] from lock acquisition 
-until the cache operation completes execution. An error (TTLExceeded) occurs if this 
-period is exceeded. 
-If it's thrown, set this longer.
-The minimum value is `1000`; if a value lower than this is specified, this minimum value is used.
-Default is `1000`.
-
-##### purgeProbability
-
-> **purgeProbability**: `number`
-
-The probability (rate) at which old cache entries are removed. 
-For example, if `0.2` is specified, one removal operation will occur for every five operations (`set`, `get`, or `remove`). 
-Default is `0.1`. The minimum is `0`, and the maximum is `1.0`. Values ​​outside this range will be adjusted to the minimum or maximum.
-
-##### removeInvalid
-
-> **removeInvalid**: `boolean`
-
-Specifies whether to remove invalid cache files.
-See also `invalidTtlMs`.
-
-##### retriesOnIoErr
-
-> **retriesOnIoErr**: `number`
-
-Number of retries in the event of an I/O error. 
-Default is `1`. 
-Min is `0`. If a negative value is specified, it will be adjusted to the minimum.
-
-##### retryIoIntervalMs
-
-> **retryIoIntervalMs**: `number`
-
-Retry interval for IO errors (in milliseconds)
-Default is `100`. 
-Min is `100`. Values ​​below the minimum will be adjusted to the minimum.
-
-##### ttlMs
-
-> **ttlMs**: `number`
-
-Cache validity period (milliseconds)
-If a value of `0` or less is specified, there is no expiration.
-The default is `600000`', which means 10 minutes.
-
-##### withLock
-
-> **withLock**: `boolean`
-
-Specifies whether to apply exclusive control to cache file I/O operations 
-during `get`, `set`, or `remove` actions. This helps avoid conflicts with other processes.
+[`Config`](../interfaces/Config.md)

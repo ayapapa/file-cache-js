@@ -15,7 +15,7 @@ afterEach(async () => {
   await cache.purge({ force: true })
 });
 
-describe('FileCache', () => {
+describe('FileCache success', () => {
 
   it("no chache dir", () => {
     const cacheDir = getCacheDirPath();
@@ -173,11 +173,12 @@ describe('FileCache', () => {
     const key2 = 'FileCache_purgeProbability1.0_2';
     const value = "purgeProbability: 1.0";
     const cache = new FileCache({ purgeProbability: 1.0 });
-    const data = { value: 1234, expiresAt: Date.now() - 1000 }
+    //const data = { value: 1234, expiresAt: Date.now() - 1000 }
 
     // Fifty tests should be enough.
     for(let i = 0; i < 50; i++) {
-      fs.writeFileSync(cachePath, JSON.stringify(data, null, '  '));
+      //fs.writeFileSync(cachePath, JSON.stringify(data, null, '  '));
+      await cache.set(key, 1234, { ttlMs: 1 });
       await cache.set(key2, value);
       expect(fs.existsSync(cachePath)).toBeFalsy();
     }

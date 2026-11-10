@@ -6,7 +6,7 @@
 
 # Interface: Config
 
-Defined in: [src/lib/FileCache.ts:18](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L18)
+Defined in: [src/lib/FileCache.ts:18](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L18)
 
 Configurations.
 
@@ -16,7 +16,7 @@ Configurations.
 
 > `optional` **cacheDirectory?**: `string`
 
-Defined in: [src/lib/FileCache.ts:23](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L23)
+Defined in: [src/lib/FileCache.ts:23](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L23)
 
 Cache directory. 
 Default is "`process.cwd()`/.cache".
@@ -27,7 +27,7 @@ Default is "`process.cwd()`/.cache".
 
 > `optional` **invalidTtlMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:99](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L99)
+Defined in: [src/lib/FileCache.ts:100](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L100)
 
 Validity period in milliseconds for the modification time of invalid `cache file`. <br>
 If `removeInvalid` is true and the specified amount of time has elapsed since the modification time of an invalid `cache file`, it is forcibly removed. 
@@ -40,7 +40,7 @@ Default is `600000`.
 
 > `optional` **lockDirectory?**: `string`
 
-Defined in: [src/lib/FileCache.ts:46](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L46)
+Defined in: [src/lib/FileCache.ts:47](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L47)
 
 Specifies the directory path to stored locking imformations.
 If it has been specified, use this as the top priority.
@@ -55,7 +55,7 @@ Note: In cases where the directory is explicitly specified (1 or 2 above), an er
 
 > `optional` **lockTimeoutMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:54](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L54)
+Defined in: [src/lib/FileCache.ts:55](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L55)
 
 Maximum wait time to acquire the lock [milliseconds]. <br>
 `0` does not wait for the preceding unlock. 
@@ -68,7 +68,7 @@ Default is `1000`.
 
 > `optional` **lockTtlMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:64](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L64)
+Defined in: [src/lib/FileCache.ts:65](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L65)
 
 Lock validity period (time to live): the maximum time [milliseconds] from lock acquisition 
 until the cache operation completes execution. An error (TTLExceeded) occurs if this 
@@ -83,7 +83,7 @@ Default is `1000`.
 
 > `optional` **purgeProbability?**: `number`
 
-Defined in: [src/lib/FileCache.ts:71](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L71)
+Defined in: [src/lib/FileCache.ts:72](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L72)
 
 The probability (rate) at which old cache entries are removed. 
 For example, if `0.2` is specified, one removal operation will occur for every five operations (`set`, `get`, or `remove`). 
@@ -95,7 +95,7 @@ Default is `0.1`. The minimum is `0`, and the maximum is `1.0`. Values ​​out
 
 > `optional` **removeInvalid?**: `boolean`
 
-Defined in: [src/lib/FileCache.ts:91](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L91)
+Defined in: [src/lib/FileCache.ts:92](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L92)
 
 Specifies whether to remove invalid cache files.
 See also `invalidTtlMs`.
@@ -106,7 +106,7 @@ See also `invalidTtlMs`.
 
 > `optional` **retriesOnIoErr?**: `number`
 
-Defined in: [src/lib/FileCache.ts:78](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L78)
+Defined in: [src/lib/FileCache.ts:79](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L79)
 
 Number of retries in the event of an I/O error. 
 Default is `1`. 
@@ -118,7 +118,7 @@ Min is `0`. If a negative value is specified, it will be adjusted to the minimum
 
 > `optional` **retryIoIntervalMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:85](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L85)
+Defined in: [src/lib/FileCache.ts:86](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L86)
 
 Retry interval for IO errors (in milliseconds)
 Default is `100`. 
@@ -130,7 +130,7 @@ Min is `100`. Values ​​below the minimum will be adjusted to the minimum.
 
 > `optional` **ttlMs?**: `number`
 
-Defined in: [src/lib/FileCache.ts:30](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L30)
+Defined in: [src/lib/FileCache.ts:30](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L30)
 
 Cache validity period (milliseconds)
 If a value of `0` or less is specified, there is no expiration.
@@ -142,7 +142,8 @@ The default is `600000`', which means 10 minutes.
 
 > `optional` **withLock?**: `boolean`
 
-Defined in: [src/lib/FileCache.ts:36](https://github.com/ayapapa/file-cache-js/blob/71e03dac51b762c305df5128dce5a82d7a1c9edf/src/lib/FileCache.ts#L36)
+Defined in: [src/lib/FileCache.ts:37](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L37)
 
 Specifies whether to apply exclusive control to cache file I/O operations 
 during `get`, `set`, or `remove` actions. This helps avoid conflicts with other processes.
+Default is `true`. If set to `false`, exclusive control is not applied, which may lead to conflicts with other processes.
