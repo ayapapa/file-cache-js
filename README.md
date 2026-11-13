@@ -66,7 +66,7 @@ npm install @ayapapa-npm/file-cache-js
 | `withLock` | `boolean` | `true` N/A | Specifies whether to apply exclusive control to cache file I/O operations. |  |
 | `lockDirectory` | `string` | `${process.cwd()}/.lock` N/A | Directory used to store lock information. |  |
 | `lockTimeoutMs` | `number` | `1000` `0` | Maximum time to wait for acquiring the lock, in milliseconds. | Cannot be used with `timeoutSec`. `0` means no waiting. Values below `0` are treated as `0`. |
-| `lockttlMs` | `number` | `1000` `1000` | Lock time to live in milliseconds. | Values below `1000` are treated as `1000`. |
+| `lockTtlMs` | `number` | `1000` `1000` | Lock time to live in milliseconds. | Values below `1000` are treated as `1000`. |
 | `purgeProbability` | `number` | `0.1` `0` | The probability (rate) at which old cache entries are removed. | The maximum is `1.0`. |
 | `retriesOnIoErr` | `number` | `1` `0` | Number of retries for `cache file` operations after I/O errors. | Values below `0` are treated as `0`. |
 | `retryIoIntervalMs` | `number` | `100` `100` | Retry interval in milliseconds after I/O errors. | Values below `100` are treated as `100`. |
@@ -78,6 +78,7 @@ npm install @ayapapa-npm/file-cache-js
 | Class name | Overview | Message | Other key properties | Recommended action |
 |---|---|---|---|---|
 | `InvalidCache` | Invalid cache information. | Found an invalid cache file. | `{ code: "EINVALIDCACHE" }` | Identify the source of the invalid cache and delete the affected cache file. |
-| `FileCacheError` | A file cache operation failed. | Invalid `cache key`. | `{ code: "EINVAL" }` | Specify valid `cache key`. |
-| `FileCacheError` | A file cache operation failed. | Failed to acquire the lock. | `{ code: "ELOCK" }` | Increase the value of `lockTimeoutMs`. |
-| `FileCacheError` | A file cache operation failed. | Failed to create the cache data storage directory. | `{ code: "ECREATECACHEDIR" }` | Specify valid `cache directory`. |
+| `FileCacheError` | A file cache operation failed. | Invalid `cache key`. | `{ code: "ERR_INVALID_PARAM" }` | Specify valid `cache key`. |
+| `FileCacheError` | A file cache operation failed. | Failed to acquire the lock, or exceeded lock ttl. | `{ code: "ERR_LOCK_FAILED" }` | Increase the value of `lockTimeoutMs`, `lockTtlMs`. |
+| `FileCacheError` | A file cache operation failed. | Failed to create the `cache directory`. | `{ code: "ERR_CACHEDIR_CREATION_FAILED" }` | Specify valid `cache directory`. |
+| `FileCacheError` | A file cache operation failed. | Failed to access the `cache file`. | `{ code: "ERR_IO_FAILED" }` | Check the status of the file system. |
