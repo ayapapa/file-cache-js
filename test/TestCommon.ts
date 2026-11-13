@@ -5,6 +5,7 @@ export function getCacheDirPath() {
 }
 
 export function getCacheFilePath(key: string) {
-  return path.join(getCacheDirPath(), `${key}.json`);
+  const encodedKey = key.replace(/[<>:/\\|?*]/g, () => '_').replace(/"/g, () => '');
+  return path.join(getCacheDirPath(), `${encodedKey}.json`);
 }
-
+  

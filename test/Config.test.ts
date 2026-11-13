@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileCache, FileCacheError, type Config } from '../src/index.ts';
 import { FileLock } from '@ayapapa-npm/file-lock-js';
+import { DefaultLogger } from '../src/lib/DefaultLogger.ts';
+
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -27,12 +29,12 @@ describe('FileCache', () => {
       withLock:           true,
       lockTimeoutMs:      1000,
       lockTtlMs:          1000,
-      purgeProbability:   0.1,
+      purgeProbability:   0.05,
       _debug:             false,
+      logger:             DefaultLogger
     });
 
     expect(cache.getConfig()).toMatchObject(FileCache.getDefaultConf());
-
   });
 
   it("Min setting.", () => {
@@ -53,7 +55,7 @@ describe('FileCache', () => {
       lockTtlMs:          1000,
       purgeProbability:   0,
       invalidTtlMs:       0
-    })
+    });
   });
 
   /**
@@ -410,7 +412,7 @@ describe('FileCache', () => {
     catch (err) {
       expect(err).instanceOf(FileCacheError);
       expect(err).toMatchObject({
-        code: "ECREATECACHEDIR",
+        code: "ERR_CACHEDIR_CREATION_FAILED",
         message: "Failed to create the cache data storage directory.",
       });
     }
@@ -431,7 +433,7 @@ describe('FileCache', () => {
     catch (err) {
       expect(err).instanceOf(FileCacheError);
       expect(err).toMatchObject({
-        code: "ECREATECACHEDIR",
+        code: "ERR_CACHEDIR_CREATION_FAILED",
         message: "Failed to create the cache data storage directory.",
       });
     }

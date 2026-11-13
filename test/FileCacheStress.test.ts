@@ -2,7 +2,7 @@
 //import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FileCache, /*type Config*/ } from '../src/index.ts';
-//import { sleepAsync } from '../src/lib/FileCache.ts';
+import { sleepAsync } from '../src/lib/FileCache.ts';
 //import { getCacheDirPath, getCacheFilePath } from './TestCommon.ts';
 
 beforeEach(() => {
@@ -15,13 +15,15 @@ afterEach(async () => {
   await cache.purge({ force: true })
 });
 
+let NumberOfTimes = 500;
+
 describe('FileCache stress test', () => {
 
-  it("500 async set, same key, same instance.", async () => {
+  it(`${NumberOfTimes} async set, same key, same instance.`, async () => {
     const NumberOfTimes = 500;
     const prs = [] as Promise<void>[];
     const key = "100 async set, same key, same instance";
-    const cache = new FileCache();
+    const cache = new FileCache();//{ _debug: true });
     for (let i = 0; i < NumberOfTimes; i++) {
       prs.push(cache.set(key, i));
     }
@@ -29,10 +31,9 @@ describe('FileCache stress test', () => {
     expect(results.every(r => r.status === 'fulfilled')).toBeTruthy();
   });
 
-return;
-
-it("500 async set, same key, different instances.", async () => {
-    const NumberOfTimes = 100;
+  NumberOfTimes = 500;
+  it(`${NumberOfTimes} async set, same key, different instances.`, async () => {
+    const NumberOfTimes = 500;
     const prs = [] as Promise<void>[];
     const key = "100 async set, same key, different instances";
     //const cache = new FileCache();
@@ -42,7 +43,7 @@ it("500 async set, same key, different instances.", async () => {
         lockTimeoutMs: 10000,
         lockTtlMs: 10000
       })).set(key, i));
-      //await sleepAsync(0);
+      await sleepAsync(0);
       //await Promise.resolve();
       
       // B:
@@ -78,19 +79,27 @@ it("500 async set, same key, different instances.", async () => {
     }
     const results = await Promise.allSettled(prs);
     //expect(results.every(r => r.status === 'fulfilled')).toBeTruthy();
-    let success = 0, errors = 0;
-    results.forEach(r => {
+    let success = 0, errors = 0, ttlExceeded = 0, alreadyLocked = 0;
+    results.forEach((r) => {
       if (r.status === 'fulfilled') {
+        expect(r.value).toBeUndefined()
         success++;
       }
       else {
         errors++;
+        expect(r.reason.cause).toBeDefined();
+        if (r.reason.cause?.code === 'ETTLEXCEEDED') 
+          ttlExceeded++;
+        else if (r.reason.cause?.code === 'EALREADYLOCKED') 
+          alreadyLocked++;
       }
     });
-    console.log("success =", success, "errors =", errors);
+    expect(success + errors).toBe(NumberOfTimes);
+    expect(alreadyLocked + ttlExceeded).toBe(errors);
+    console.log("success =", success, "errors =", errors, `(EALREADYLOCKED = ${alreadyLocked}, ETTLEXCEEDED = ${ttlExceeded}, other = ${errors - alreadyLocked - ttlExceeded})`);
   });
 return;
-  it("500 async get, same key, same instance.", async () => {
+  it(`${NumberOfTimes} async get, same key, same instance.`, async () => {
     const NumberOfTimes = 500;
     const prs = [] as Promise<unknown>[];
     const key = "100 async set, same key, same instance";
@@ -101,17 +110,5 @@ return;
     const results = await Promise.allSettled(prs);
     expect(results.every(r => r.status === 'fulfilled')).toBeTruthy();
   });
-  /*
-  it("500 async set, different keys, same instance.", async () => {
-    const NumberOfTimes = 500;
-    const prs = [] as Promise<void>[];
-    const key = "100 async set, same key, same instance";
-    const cache = new FileCache();
-    for (let i = 0; i < NumberOfTimes; i++) {
-      prs.push(cache.set(key, i));
-    }
-    const results = await Promise.allSettled(prs);
-    expect(results.every(r => r.status === 'fulfilled')).toBeTruthy();
-  });
-*/
+
 });

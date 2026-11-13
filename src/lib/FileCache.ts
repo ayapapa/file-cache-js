@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { DefaultLogger } from './DefaultLogger.ts'
 import { createContracts } from "@ayapapa-npm/contracts-js";
-import { FileLock, /*type FileLockConfig,*/ type FileLockOptions } from "@ayapapa-npm/file-lock-js";
-const  { REQUIRE } = createContracts();
+import { FileLock, LockError, /*type FileLockConfig,*/ type FileLockOptions, type LogProvider } from "@ayapapa-npm/file-lock-js";
 
+const  { REQUIRE, REQUIRE_DEBUG } = createContracts();
 
+/*
 let seq = 0;
 
 function trace(event: string, id: number): void {
@@ -13,6 +15,7 @@ function trace(event: string, id: number): void {
     `${String(++seq).padStart(4, '0')} ${performance.now().toFixed(3)} ${event} ${id}`
   );
 }
+*/
 
 /** 
  * @internal
@@ -38,6 +41,12 @@ export interface Config {
    * The default is `600000`', which means 10 minutes.
    */
   ttlMs?: number,
+
+  /**
+   * Logger
+   * Default is `DefaultLogger`
+   */
+  logger?: LogProvider;
 
   /**
    * Specifies whether to apply exclusive control to cache file I/O operations 
@@ -76,8 +85,8 @@ export interface Config {
 
   /**
    * The probability (rate) at which old cache entries are removed. 
-   * For example, if `0.2` is specified, one removal operation will occur for every five operations (`set`, `get`, or `remove`). 
-   * Default is `0.1`. The minimum is `0`, and the maximum is `1.0`. Values ​​outside this range will be adjusted to the minimum or maximum.
+   * For example, if you specify `0.2`, the `purge` operation will occur approximately once every five operations(`set`, `get`, or `remove`). 
+   * Default is `0.01`. The minimum is `0`, and the maximum is `1.0`. Values ​​outside this range will be adjusted to the minimum or maximum.
    */
   purgeProbability?: number;
 
@@ -140,10 +149,6 @@ type Data = {
  */
 export class FileCache {
   /**
-   * Static fields
-   */
-
-  /**
    * @internal
    * Default configurations.
    */
@@ -156,9 +161,10 @@ export class FileCache {
     lockDirectory:      path.join(process.cwd(), '.lock'),
     lockTimeoutMs:      1000,
     lockTtlMs:          1000,
-    purgeProbability:   0.1,
+    purgeProbability:   0.05,
     removeInvalid:      false,
     invalidTtlMs:       600000,
+    logger:             DefaultLogger,
     _debug:             false,
   }
 
@@ -169,10 +175,6 @@ export class FileCache {
     return { ...FileCache.#defaultConfig };
   }
   
-  /**
-   * Instance fields.
-   */
-
   /**
    * @internal
    * Current configurations.
@@ -192,8 +194,12 @@ export class FileCache {
   #purging = false;
 
   /**
-   *  Instance mehods. 
+   * @internal
+   * Get logger
    */
+  get #logger() {
+    return this.#currentConfig.logger;
+  }
 
   /**
    * Constructor.
@@ -202,8 +208,7 @@ export class FileCache {
    * If a null-like value (null or undefined) is provided, it is treated as if the value had been omitted.
    */
   public constructor(config: Config = FileCache.#defaultConfig) {
-    const rConf = this.#resolvConf(config);
-    this.#currentConfig = { ...FileCache.#defaultConfig, ...rConf};
+    this.#currentConfig = this.#resolvConf(config);
     this.#currentConfig.ttlMs = Math.max(this.#currentConfig.ttlMs, 0);
     this.#currentConfig.retriesOnIoErr = Math.max(this.#currentConfig.retriesOnIoErr, 0);
     this.#currentConfig.retryIoIntervalMs = Math.max(this.#currentConfig.retryIoIntervalMs, 100);
@@ -215,6 +220,7 @@ export class FileCache {
     if (this.#currentConfig.withLock) {
       FileLock.setConfig({ lockDirectory: this.#currentConfig.lockDirectory });
     }
+    DefaultLogger.setConfig({ debug: this.#currentConfig._debug })
   }
 
   /**
@@ -229,10 +235,15 @@ export class FileCache {
    * @throws  {@link FileCacheError}  If invalid `cache key', file IO error, or lock error.
    */
   public async get<T = unknown>(key: string): Promise<T | undefined> {
-    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", FileCacheError, null, { code: 'EINVAL' });
+    await this.#purgeRandom();
+    return (await this.#get<T>(key)).value;
+    /*
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, null, { code: 'ERR_INVALID_PARAM', key });
     return this.#execute(key, async () => {
         return (await this.#get<T>(key)).value;
     });
+    */
   }
   
   /**
@@ -247,17 +258,16 @@ export class FileCache {
    * @throws  {@link FileCacheError}  If file IO error, or lock error.
    */
   public async getAll(options? : { throwIfInvalid?: boolean }): Promise<Record<string, unknown>> {
-    const throwIfInvalid = options?.throwIfInvalid ?? false;
-    const ret = {} as Record<string, unknown>;
-    return this.#execute(this.#keyForKeyManagement, async () => {
+    return await this.#execute(this.#keyForKeyManagement, async () => {
+      const ret = {} as Record<string, unknown>;
+      const keyMgr = new Set<string>([]);
+      const throwIfInvalid = options?.throwIfInvalid ?? false;
       await this.#forAllKeys(async (key: string) => {
         try {
-          const v = await this.get(key);
-          if (v === undefined) {
-            await this.#removeKey(key);
-          }
-          else {
+          const v = (await this.#get(key, { keyManage: false }) ).value;
+          if (v !== undefined) {
             ret[key] = v;
+            keyMgr.add(key);
           }
         }
         catch (err) {
@@ -269,6 +279,8 @@ export class FileCache {
           }
         }
       });
+      // update KeyMgr
+      await this.#setKeyMgr(keyMgr);
       return ret;
     }, { // Specify a relatively large timeout and TTL, as the operation applies to the entire key.
       lockTimeoutMs: this.#currentConfig.lockTimeoutMs * 10,
@@ -285,39 +297,54 @@ export class FileCache {
   }
 
   public has(key: string) {
-    const path = this.#getFilePath(key);
-    return fs.existsSync(path);
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, null, { code: 'ERR_INVALID_PARAM', key });
+    return fs.existsSync(this.#getFilePath(key));
   }
 
   /**
    * Perform a mass removal of the cash. 
    * @param options Options.
-   * - force: `boolean` — If `true`, deletes all cache files, including those identified as invalid. 
+   * - force: `boolean` — If `true`, remove all cache files, including those identified as invalid. 
+   * - throwIfInvalid: 
    * Note that the determination of whether a cache file is "invalid" depends on the `removeInvalid` and `invalidTtlMs` settings in the `Config` object provided at instantiation. (See also `Config`.)
    * @returns An object containing the keys that failed to be deleted and the reasons for the failure; returns `undefined` if no deletions failed.
    * @throws  {@link InvalidCache}    If cache contents is not valid Json or, has not mandatory propaties. 
    * @throws  {@link FileCacheError}  If invalid `cache key', file IO error, or lock error.
    */
-  public async purge(options?: { force?: boolean }): Promise<Record<string, unknown> | undefined> {
+  public async purge(options?: { force?: boolean, throwIfInvalid?: boolean }): Promise<Record<string, unknown> | undefined> {
     if (this.#purging) return;
+    this.#logger.trace(new Date().toDateString(), 'entered puge()');
     this.#purging = true;
     const failures = {} as Record<string, unknown>;
-    const exec = async (funcName: 'get' | 'remove'): Promise<void> => {
-      return this.#execute(this.#keyForKeyManagement, async () => {
-        return await this.#forAllKeys(async (key: string) => {
+    const exec = async (operation: (key: string) => Promise<unknown>): Promise<void> => {
+      return await this.#execute(this.#keyForKeyManagement, async () => {
+        const keyMgr = new Set<string>([]);
+        const throwIfInvalid = options?.throwIfInvalid ?? false;
+        await this.#forAllKeys(async (key: string) => {
           try {
             if (this.has(key)) {
-              await this[funcName](key);
-            }
-            else {
-              await this.#removeKey(key);
+              if(await operation(key) !== undefined)
+                keyMgr.add(key);
             }
           }
           catch (err) {
+            if (err instanceof InvalidCache === false || throwIfInvalid == true) {
+              throw err;
+            }
+            else {
+              failures[key] = err;
+              return;
+            }
+            /*
+            // ここもＥＲＲＯＲ結果をfailuresに積むってことでいいのでは？。。しかし、どうする？？
+            if (err instanceof FileCacheError && err.code === 'ERR_LOCK_FAILED')
+              throw err;
             failures[key] = err;
-            await this.#removeKey(key);
+            */
           }
         });
+        await this.#setKeyMgr(keyMgr);
       }, { // Specify a relatively large timeout and TTL, as the operation applies to the entire key.
         lockTimeoutMs: this.#currentConfig.lockTimeoutMs * 10,
         lockTtlMs: this.#currentConfig.lockTtlMs * 10,
@@ -327,7 +354,10 @@ export class FileCache {
     try {
       // Use 'remove' for a forced deletion; otherwise, use 'get'.
       // With 'get', expired files are automatically deleted.
-      await exec(options?.force ? 'remove' : 'get');
+      await exec(options?.force 
+        ? async (key) => { await this.#remove(key, { keyManage: false }); return undefined; } 
+        : async (key) => { return (await this.#get(key, { keyManage: false })).value; }
+      );
     }
     finally {
       this.#purging = false;
@@ -340,11 +370,16 @@ export class FileCache {
    * If the `cache file` is considered invalid, it is deleted according to the `removeInvalid` 
    * and `invalidTtlMs` settings, resulting in either a return value of `undefined` or an error.
    * @param key `cache key`
+   * @param force If `true`, the `cache file` will be removed, even if it contains invalid data.
    * @throws  {@link InvalidCache}    If cache contents is not valid Json or, has not mandatory propaties. 
    * @throws  {@link FileCacheError}  If invalid `cache key', file IO error, or lock error.
    */
-  public async remove(key: string): Promise<void> {
-    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", FileCacheError, { code: 'EINVAL', key });
+  public async remove(key: string, options?: { force?: boolean }): Promise<void> {
+    await this.#purgeRandom();
+    await this.#remove(key, options);
+    /*
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, { code: 'ERR_INVALID_PARAM', key });
     return this.#execute(key, async () => {
       // Use '#get' to identify files for deletion. 
       // Files determined to be eligible via '#get' are then deleted using '#remove'. 
@@ -353,6 +388,7 @@ export class FileCache {
       if (res.value === undefined && res.reason !== 'ASIS') return;
       return this.#remove(key);
     }) as Promise<void>;
+     */
   }
 
   /**
@@ -374,12 +410,17 @@ export class FileCache {
    * @throws  {@link FileCacheError}  If invalid `cache key', file IO error, or lock error.
    */
   public async set<T>(key: string, value: T, options?: { ttlMs?: number }): Promise<void> {
+    //seq++;
+    await this.#purgeRandom();
+    await this.#set(key, value, options);
+    /*
 {
 const id = value as number;
 trace('set:start', id);
 //await sleepAsync(0);
 
-    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", FileCacheError, { code: 'EINVAL', key });
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, { code: 'ERR_INVALID_PARAM', key });
 try {  
     return await this.#execute(key, async () => {
       const ttlMs = options?.ttlMs ?? this.#currentConfig.ttlMs;
@@ -394,7 +435,8 @@ try {
 finally {
 trace('set:complete', id);
 }
-}  }
+}  */
+  }
 
   /**
    * @internal
@@ -416,8 +458,7 @@ trace('set:complete', id);
           await sleepAsync(interval);
           return exec();
         }
-        const param = { code: 'EIO', cause: err } as { code: string, cause?: unknown, key?: string};
-        err instanceof Error && 'code' in err && (param.code = String(err.code));
+        const param = { code: 'ERR_IO_FAILED', cause: err } as { code: ErrorCode, cause?: unknown, key?: string};
         key !== null && key.length > 0 && (param.key = key);
         throw new FileCacheError(msg, param);
       }
@@ -426,47 +467,56 @@ trace('set:complete', id);
     return exec();
   }
 
-
-  async #getKeyMgr(): Promise<Set<string>> {
-    const v = (await this.#get<string[]>(this.#keyForKeyManagement)).value;
-    return new Set((v ?? []));
-  }
-
-  async #setKeyMgr(km: Set<string>): Promise<void> {
-    return this.#set(this.#keyForKeyManagement, { value: [...km], expiresAt: 0 });
-  }
-
   /**
    * @internal
    * Keyマネージャにkeyを追加する
    * @param key 
    */
   async #addKey(key: string): Promise<void> {
-    return this.#execute(this.#keyForKeyManagement, async () => {
+    //this.#logger.trace(Date.now(), 'entered this.#addKey()');
+    await this.#execute(this.#keyForKeyManagement, async () => {
+      //this.#logger.trace(Date.now(), 'lock acquired in this.#addKey()');
       const keyMgr = await this.#getKeyMgr();
       keyMgr.add(key);
-      return this.#setKeyMgr(keyMgr);
-    }, {
+      await this.#setKeyMgr(keyMgr);
+      //this.#logger.trace(Date.now(), 'lock released in this.#addKey()');
+    }/*, {
       allowReentry: true
-    });
+    }*/);
+    //this.#logger.trace(Date.now(), 'exited this.#addKey()');
   }
 
   /**
    * @internal
-   * Keyマネージャからkeyを削除する
+   * Get data from `cache file`, and check its validity.
    * @param key 
+   * @returns 
+   * - result:  'expired' means 'valid but expired', 
+   * 'invalid' means it has no mandatory data, and 'none' means it's not found.
+   * - data:    An object obtained by parsing the content. It's defined only if result is 'valid'.
    */
-  async #removeKey(key: string): Promise<void> {
-    return this.#execute(this.#keyForKeyManagement, async () => {
-      const keyMgr = await this.#getKeyMgr();
-      keyMgr.delete(key);
-      return this.#setKeyMgr(keyMgr);
-    }, {
-      allowReentry: true
-    });
+  async #check(key: string): Promise<{ result: 'valid' | 'expired' | 'invalid' | 'none', data?: Data, cause?: unknown }> {
+    const filePath = this.#getFilePath(key);
+    const contents = await this.#access(key, () => {
+      if (!fs.existsSync(filePath)) return undefined;
+      return fs.readFileSync(filePath, 'utf8');
+    },
+    "Failed to read `cache file`."
+    ) as string | undefined;
+    if (contents === undefined) return { result: 'none' };
+
+    try {
+      const data = this.#parse(contents, key);
+      if (data.expiresAt === 0 || data.expiresAt > Date.now()) {
+        return { result: 'valid', data: data };
+      }
+      return { result: 'expired', data};
+    }
+    catch (err) {
+      return { result: 'invalid', cause: err };
+    }
   }
 
-  
   /**
    * @internal
    * Execute cache operation.  
@@ -479,12 +529,14 @@ trace('set:complete', id);
     allowReentry?: boolean,
     lockTimeoutMs?: number,
     lockTtlMs?: number,
-    id?: number
+    id?: number,
+    lock?: boolean
    }): Promise<T> {
-const id =  options?.id ?? 9999999;
-if (!options?.allowReentry) trace('lock:try', id);
-    await this.#purgeRandom();
-    if (this.#currentConfig.withLock) {
+
+//const id =  options?.id ?? 9999999;
+//if (!options?.allowReentry) trace('lock:try', id);
+    //await this.#purgeRandom();
+    if (options?.lock ?? this.#currentConfig.withLock) {
       //const start = Date.now();
       const lockOpts = { 
           timeoutMs: options?.lockTimeoutMs ?? this.#currentConfig.lockTimeoutMs,
@@ -494,25 +546,26 @@ if (!options?.allowReentry) trace('lock:try', id);
         //FileLock.setConfig({ _debug: true } as FileLockConfig)
       try {
         return await FileLock.withLock(key, () => {
-trace('lock:acquired', id);
-          //console.log(Date.now() - start);
+//trace('lock:acquired', id);
+          //this.#logger.log(Date.now() - start);
 try {
           return operation();
 }
 finally {
-  trace('lock:release', id);
+  //trace('lock:release', id);
 }            
         }, lockOpts);
       }
       catch (err) {
-        console.error(err);
+        this.#logger.debug(err);
         if (err instanceof FileCacheError) throw err;
-        else throw new FileCacheError("Failed to acquire the lock.", { code: "ELOCK", key, cause: err });
+        const code = err instanceof LockError ? 'ERR_LOCK_FAILED' : 'ERR_FILECACHE';
+        throw new FileCacheError("Failed to acquire the lock.", { code, key, cause: err });
       }
       finally { //
       }
     }
-    return operation();
+    return await operation();
   }
 
   /**
@@ -530,44 +583,85 @@ finally {
    * @internal
    * get cached data from a `cache file`.
    * @param key `cache key`
+   * @param options
+   * - lock: boolean      `true`なら排他制御を有効化する。デフォルトは、コンストラクト時に指定された`Config`に従う。
+   * - keyManage: boolean `true`ならキー管理を更新する。デフォルトは、`true`。
    * @return The `cache value`, and the reason why it is that particular value.
+   * @throws {@link FileCacheError} If invalid param, invalid data, or IO error.
    */
-  async #get<T = unknown>(key: string): Promise<{ value: T | undefined, reason: 'NOTEXIST' | 'EXPIRED' | 'ASIS' }> {
-    const filePath = this.#getFilePath(key);
-    const contents = await this.#access(key, () => {
-      if (!fs.existsSync(filePath)) return undefined;
-      return fs.readFileSync(filePath, 'utf8');
-    },
-    "Failed to read `cache file`."
-    ) as string | undefined;
-    if (contents === undefined) return { value: undefined, reason: 'NOTEXIST' };
+  async #get<T = unknown>(key: string, options?: { lock?: boolean, keyManage?: boolean }/*lock?: boolean, keyManage?: boolean*/)
+  : Promise<{ value: T | undefined, reason: 'NOTEXIST' | 'EXPIRED' | 'ASIS' }> {
 
-    try {
-      const cached = this.#parse(contents, key);
-      if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
-        return { value: cached.value as T, reason: 'ASIS' }; // 有効値
-      }
-    }
-    catch (err) {
-      // Analysis failed (invalid file); checking deletion instructions 
-      // to determine whether to proceed with deletion.
-      if (this.#currentConfig.removeInvalid === false) {
-        throw err;
-      }
-      // Check and evaluate the file's modification time.
-      const stat = await this.#access(
-        key, 
-        () => fs.statSync(filePath, { throwIfNoEntry: false }),
-        "Failed to get `cache file` information."
-      ) as fs.Stats | undefined;
-      if (stat === undefined || stat.mtimeMs + this.#currentConfig.invalidTtlMs > Date.now()) {
-        throw err;
-      }
-    }
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, null, { code: 'ERR_INVALID_PARAM', key });
 
-    // Deleted due to expiration
-    await this.#remove(key); 
-    return { value: undefined, reason: 'EXPIRED' };
+//    const _get = async (): Promise<{ value: T | undefined, reason: 'NOTEXIST' | 'EXPIRED' | 'ASIS' }> => {
+    return await this.#execute(key, async () => {
+      const filePath = this.#getFilePath(key);
+      const check = await this.#check(key);
+      if (check.result === 'valid' || check.result === 'none')
+        return { value: check.data?.value as T, reason: 'ASIS' };
+      if (check.result === 'invalid') {
+        if (this.#currentConfig.removeInvalid === false)
+          throw check.cause;
+        // Check and evaluate the file's modification time.
+        const stat = await this.#access(
+          key, 
+          () => fs.statSync(filePath, { throwIfNoEntry: false }),
+          "Failed to get `cache file` information."
+        ) as fs.Stats | undefined;
+        if (stat === undefined || stat.mtimeMs + this.#currentConfig.invalidTtlMs > Date.now()) {
+          // stale判定なし、あるいは、判定不能のため、エラー
+          throw check.cause;
+        }
+      }
+      // Remove due to expiration
+      await this.#_remove(key, options?.keyManage); 
+      return { value: undefined, reason: 'EXPIRED' };
+
+      /*
+      const contents = await this.#access(key, () => {
+        if (!fs.existsSync(filePath)) return undefined;
+        return fs.readFileSync(filePath, 'utf8');
+      },
+      "Failed to read `cache file`."
+      ) as string | undefined;
+      if (contents === undefined) return { value: undefined, reason: 'NOTEXIST' };
+
+      try {
+        const cached = this.#parse(contents, key);
+        if (cached.expiresAt === 0 || cached.expiresAt > Date.now()) {
+          return { value: cached.value as T, reason: 'ASIS' }; // 有効値
+        }
+      }
+      catch (err) {
+        // Analysis failed (invalid file); checking deletion instructions 
+        // to determine whether to proceed with deletion.
+        if (this.#currentConfig.removeInvalid === false) {
+          throw err;
+        }
+        // Check and evaluate the file's modification time.
+        const stat = await this.#access(
+          key, 
+          () => fs.statSync(filePath, { throwIfNoEntry: false }),
+          "Failed to get `cache file` information."
+        ) as fs.Stats | undefined;
+        if (stat === undefined || stat.mtimeMs + this.#currentConfig.invalidTtlMs > Date.now()) {
+          throw err;
+        }
+      }
+
+      // Remove due to expiration
+      await this.#_remove(key, options?.keyManage); 
+      return { value: undefined, reason: 'EXPIRED' };
+      */
+    }, options); //typeof options?.lock === `boolean` ? { lock: options?.lock } : {});
+
+/*
+    return await this.#execute(key, async () => {
+        return await _get();
+    }, typeof options?.lock === `boolean` ? { lock: options?.lock } : {});
+*/
   }
 
   /**
@@ -613,12 +707,12 @@ finally {
       }
       catch (err) {
         if (required) {
-          throw new FileCacheError("Failed to create the cache data storage directory.", { code: 'ECREATECACHEDIR', cause: err });
+          throw new FileCacheError("Failed to create the cache data storage directory.", { code: 'ERR_CACHEDIR_CREATION_FAILED', cause: err });
         }
         continue;
       }
     }
-    throw new FileCacheError("Failed to create the cache data storage directory.", { code: 'ECREATECACHEDIR' });
+    throw new FileCacheError("Failed to create the cache data storage directory.", { code: 'ERR_CACHEDIR_CREATION_FAILED' });
   }
 
   /**
@@ -629,6 +723,11 @@ finally {
   #getFilePath(key: string): string {
     const encodedKey = key.replace(/[<>:/\\|?*]/g, () => '_').replace(/"/g, () => '');
     return path.join(this.#currentConfig.cacheDirectory, `${encodedKey}.json`)
+  }
+
+  async #getKeyMgr(): Promise<Set<string>> {
+    const v = (await this.#get<string[]>(this.#keyForKeyManagement, { keyManage: false, lock: false })).value;
+    return new Set((v ?? []));
   }
 
   /**
@@ -664,19 +763,67 @@ finally {
 
   /**
    * @internal
-   * Remove the `cache file` corresponding to the `cache key`.
-   * @param  key `cache key`
-   * @throws  {@link FileCacheError}  If invalid `cache key', or file IO error.
+   * @param key       `cache key`
+   * @param keyManage If `true`, キー管理を更新する。デフォルトは、`true`.
+   * @throws  {@link FileCacheError}  If file IO error.
    */
-  async #remove(key: string): Promise<void> {
-    const path = this.#getFilePath(key)
+  async #_remove(key: string, keyManage?: boolean) {
     await this.#access(key, () => {
+      const path = this.#getFilePath(key)
       fs.existsSync(path) &&
         fs.unlinkSync(path);
     },
     "Failed to remove `cache file`."
     );
-    return this.#removeKey(key);
+    if (keyManage ?? true) await this.#removeKey(key);
+  }
+
+  /**
+   * @internal
+   * Remove the `cache file` corresponding to the `cache key`, even if it contains invalid data.
+   * 削除対象： 有効期限切れ、有効期限内、force === trueなら、不正ファイルも対象とする
+   * @param key `cache key`
+   * @param options
+   * - force: boolean     `true``なら、不正な内容のファイルも削除対象とする。デフォルトは`false`。
+   * - lock: boolean      `true`なら排他制御を有効化する。デフォルトは、コンストラクト時に指定された`Config`に従う。
+   * - keyManage: boolean `true`ならキー管理を更新する。デフォルトは、`true`。
+   * @throws  {@link FileCacheError}  If invalid `cache key', or file IO error.
+   */
+  async #remove(key: string, options?: { force?: boolean, lock?: boolean, keyManage?: boolean }): Promise<void> {
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, null, { code: 'ERR_INVALID_PARAM', key });
+    REQUIRE(key !== this.#keyForKeyManagement, 
+      'A `key` that cannot be deleted has been specified.', 
+      FileCacheError, { code: 'ERR_INVALID_PARAM', key });
+
+    await this.#execute(key, async () => {
+      // check data
+      const check = await this.#check(key);
+      if (check.result === 'none') return;
+      if (check.result === 'invalid' && !(options?.force ?? false)) return;
+
+      // Do remove
+      await this.#_remove(key, options?.keyManage ?? true);
+    }, options);//typeof options?.lock === `boolean` ? { lock: options?.lock } : {});
+  }
+
+  /**
+   * @internal
+   * Keyマネージャからkeyを削除する
+   * @param key 
+   */
+  async #removeKey(key: string): Promise<void> {
+    REQUIRE_DEBUG(key !== this.#keyForKeyManagement, 
+      'A `key` that cannot be deleted has been specified. This may indicate a bug.', 
+      FileCacheError, { code: 'ERR_INVALID_PARAM', key });
+
+    return await this.#execute(this.#keyForKeyManagement, async () => {
+      const keyMgr = await this.#getKeyMgr();
+      keyMgr.delete(key);
+      return await this.#setKeyMgr(keyMgr);
+    }/*, {
+      allowReentry: true
+    }*/);
   }
 
   /**
@@ -686,7 +833,7 @@ finally {
    * @param config 
    * @returns Resolved configurations.
    */
-  #resolvConf(config: Config): Record<string, unknown> {
+  #resolvConf(config: Config): Required<Config> {
     const rConf = {} as Record<string, unknown>;
     const defaultConf = FileCache.#defaultConfig as Readonly<Record<string, unknown>>;
 
@@ -714,7 +861,7 @@ finally {
         rConf[key] = value;
       }
     });
-    return rConf;
+    return { ...FileCache.#defaultConfig, ...rConf};
   }
 
   /**
@@ -724,30 +871,58 @@ finally {
    * @param data  Cached data (a "cache value" and an expiration time).
    * @throws  {@link FileCacheError}  If invalid `cache key', or file IO error.
    */
-  async #set(key: string, data: Data): Promise<void> {
-    await this.#access(key, () => {
-      fs.writeFileSync(this.#getFilePath(key), JSON.stringify(data, null, "  "));
-    },
-    "Failed to write `cache file`."
-    );
-    if (key !== this.#keyForKeyManagement) return this.#addKey(key);
+  async #set<T>(key: string, value: T,/*data: Data,*/ options?: { ttlMs?: number, lock?: boolean, expiresAt?: number }): Promise<void> {
+    REQUIRE(typeof key === 'string' && key.length > 0, "Invalid `cache key`.", 
+      FileCacheError, { code: 'ERR_INVALID_PARAM', key });
+
+    //this.#logger.trace(Date.now(), `No.${(options as any).NO}`, 'entered set()');
+    //console.trace();
+
+    await this.#execute(key, async () => {
+      //this.#logger.trace(Date.now(), `No.${(options as any).NO}`, 'lock acquired in set()');
+      await this.#access(key, () => {
+        const path = this.#getFilePath(key);
+        const tmp = this.#getFilePath(key) + '.tmp';
+        const ttlMs = options?.ttlMs ?? this.#currentConfig.ttlMs;
+        const expiresAt = options?.expiresAt ?? (ttlMs > 0 ? Date.now() + ttlMs : 0);
+        fs.writeFileSync(tmp, JSON.stringify({ value, expiresAt }, null, "  "));
+        fs.renameSync(tmp, path);
+      },
+      "Failed to write `cache file`."
+      );
+      //this.#logger.trace(Date.now(), `No.${(options as any).NO}`, 'before this.#addKey in set()');
+      if (key !== this.#keyForKeyManagement) return await this.#addKey(key);
+      //this.#logger.trace(Date.now(), `No.${(options as any).NO}`, 'after this.#addKey in set()');
+    }, options);  //typeof options?.lock === `boolean` ? { lock: options?.lock } : {})
+
+    //this.#logger.trace(Date.now(), `No.${(options as any).NO}`, 'lock released in set()');
   }
+
+  async #setKeyMgr(km: Set<string>): Promise<void> {
+    return await this.#set(this.#keyForKeyManagement, [...km], { expiresAt: 0, lock: false });
+  }
+
 }
 
+type ErrorCode = 'ERR_FILECACHE' | 'ERR_INVALID_PARAM' | 'ERR_LOCK_FAILED' | 'ERR_IO_FAILED' | 'ERR_CACHEDIR_CREATION_FAILED'
 /**
  * File cache error.
  */
 export class FileCacheError extends Error {
+  readonly cause?: unknown;
+  readonly code: ErrorCode = 'ERR_FILECACHE';
+  readonly key?: string;
+
   /**
    * Constructor.
    * @param msg   Error message.
    * @param param Parameters.
    */
-  constructor(msg: string, param?: { code: string, cause?: unknown, key?: string }) { 
+  constructor(msg: string, param?: { code: ErrorCode, cause?: unknown, key?: string }) { 
     super(msg);
-    param?.code != null && (Object.assign(this, { code: param.code }));
-    param?.cause != null && (Object.assign(this, { cause: param.cause }));
-    param?.key != null && (Object.assign(this, { key: param.key }));
+    param?.code  != null && (this.code  = param.code );
+    param?.cause != null && (this.cause = param.cause);
+    param?.key   != null && (this.key   = param.key  );
   }
 };
 
@@ -763,9 +938,11 @@ export class InvalidCache extends FileCacheError {
    */
   constructor(msg: string | null = InvalidCache.#defaultMsg, param?: { cause?: unknown, key?: string } ) { 
     msg = msg || InvalidCache.#defaultMsg;
-    const rParam = { code: 'EINVALIDCACHE' } as { code: string, cause?: unknown, key?: string };
+    const rParam = { code: 'ERR_FILECACHE' } as { code: ErrorCode, cause?: unknown, key?: string };
     param?.cause && (rParam.cause = param?.cause);
     param?.key && (rParam.key = param?.key);
     super(msg, rParam);
   }
 }
+
+export { type LogProvider };

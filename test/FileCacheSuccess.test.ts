@@ -182,7 +182,18 @@ describe('FileCache success', () => {
       await cache.set(key2, value);
       expect(fs.existsSync(cachePath)).toBeFalsy();
     }
-
   })
   
+  it("remove", async () => {
+    const key = 'remove';
+    const cachePath = getCacheFilePath(key);
+    const cache = new FileCache({ purgeProbability: 1.0 });
+    await cache.set(key, key);
+    expect(fs.existsSync(cachePath)).toBeTruthy();
+    expect(await cache.get(key)).toBe(key);
+    expect(await cache.remove(key)).toBeUndefined();
+    expect(fs.existsSync(cachePath)).toBeFalsy();
+    expect(await cache.get(key)).toBeUndefined();
+  })
+
 });

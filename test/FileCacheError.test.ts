@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import FileLock from '@ayapapa-npm/file-lock-js';
 import FileCache, { FileCacheError, type Config } from '../src/index.ts';
 import { getCacheDirPath, getCacheFilePath } from './TestCommon.ts';
 
@@ -68,7 +69,7 @@ describe('FileCache', () => {
     },
     async (cache: FileCache) => await cache.get(key),
     {
-      code: 'EINVALIDCACHE',
+      code: 'ERR_FILECACHE',
       message: "Found an invalid `cache file`.",
       key
     });
@@ -78,7 +79,7 @@ describe('FileCache', () => {
   it("Invalid cache file (empty file).", async () => {
     const key = 'invalidJson';
     await testInvalid(key, "", async (cache: FileCache) => await cache.get(key), {
-      code: 'EINVALIDCACHE',
+      code: 'ERR_FILECACHE',
       message: "Found an invalid `cache file`.",
       key,
       cause: {
@@ -91,7 +92,7 @@ describe('FileCache', () => {
   it("Invalid cache file (not JSON).", async () => {
     const key = 'invalidJson';
     await testInvalid(key, "()", async (cache: FileCache) => await cache.get(key), {
-      code: 'EINVALIDCACHE',
+      code: 'ERR_FILECACHE',
       message: "Found an invalid `cache file`.",
       key,
       cause: {
@@ -107,7 +108,7 @@ describe('FileCache', () => {
       key, 
       "()", 
       async (cache: FileCache) => await cache.getAll({ throwIfInvalid: true }), {
-      code: 'EINVALIDCACHE',
+      code: 'ERR_FILECACHE',
       message: "Found an invalid `cache file`.",
       key,
       cause: {
@@ -120,7 +121,7 @@ describe('FileCache', () => {
   it("Corrupt cache file (getAll no throw).", async () => {
     const key = 'invalidJsonGetAllNoThrow';
     await testInvalid(key, "()", async (cache: FileCache) => await cache.getAll({ throwIfInvalid: false }), {
-      code: 'EINVALIDCACHE',
+      code: 'ERR_FILECACHE',
       message: "Found an invalid `cache file`.",
       key,
       cause: {
@@ -173,10 +174,14 @@ describe('FileCache', () => {
     actionCbAssertions: number = 0,
   ) {
     const cacheFilePath = getCacheFilePath(key);
+    const cacheFilePathTmp = getCacheFilePath(key) + '.tmp';
     const cacheDirPath = getCacheDirPath();
     const orgFunc = fs[errFunc] as ((...args: unknown[]) => unknown);
     const spy = vi.spyOn(fs, errFunc).mockImplementation((...args: unknown[]) => {
-    const checkPath = (errFunc === 'readdirSync' || errFunc === 'mkdirSync') ? cacheDirPath : cacheFilePath;
+      const checkPath = (errFunc === 'readdirSync' || errFunc === 'mkdirSync') 
+      ? cacheDirPath 
+      : (errFunc === 'writeFileSync' ? cacheFilePathTmp : cacheFilePath);
+
       if (args[0] as string === checkPath)
         return mockCb(args);
       else 
@@ -216,7 +221,7 @@ describe('FileCache', () => {
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EMKDIR" });
       }, {
-        code: "ECREATECACHEDIR",
+        code: "ERR_CACHEDIR_CREATION_FAILED",
         message: "Failed to create the cache data storage directory.",
         cause: {
           code: "EMKDIR",
@@ -232,7 +237,7 @@ describe('FileCache', () => {
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
-        code: "EHOGE",
+        code: "ERR_IO_FAILED",
         key,
         message: "Failed to read `cache file`.",
         cause: {
@@ -249,7 +254,7 @@ describe('FileCache', () => {
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
-        code: "EHOGE",
+        code: "ERR_IO_FAILED",
         key,
         message: "Failed to write `cache file`.",
         cause: {
@@ -266,7 +271,7 @@ describe('FileCache', () => {
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
-        code: "EHOGE",
+        code: "ERR_IO_FAILED",
         key,
         message: "Failed to remove `cache file`.",
         cause: {
@@ -283,7 +288,7 @@ describe('FileCache', () => {
       (_args: unknown[]) => {
         throw Object.assign(new Error("Error!"), { code: "EHOGE" });
       }, {
-        code: "EHOGE",
+        code: "ERR_IO_FAILED",
         key,
         message: "Failed to read `cache file`.",
         cause: {
@@ -322,7 +327,7 @@ describe('FileCache', () => {
     catch (err) {
       expect(err).instanceOf(FileCacheError);
       expect(err).toMatchObject({
-        code: 'ELOCK',
+        code: 'ERR_LOCK_FAILED',
         key,
         message: "Failed to acquire the lock.",
         cause: {
@@ -354,7 +359,7 @@ describe('FileCache', () => {
           (result: unknown) => {
             const failures = result as Record<string, unknown>;
             expect(failures[key]).toMatchObject({
-              code: "EINVALIDCACHE",
+              code: "ERR_FILECACHE",
               key,
               message: "Found an invalid `cache file`.",
             });
@@ -370,7 +375,7 @@ describe('FileCache', () => {
     }
   });
 
-  it("purge({ force: true }); invalid cache files identified.", async () => {
+  it("purge({ force: true }); invalid cache files were removed.", async () => {
     const key = "FileCache_purge_invalidCache_force";
     const key2 = "FileCache_purge_invalidCache_force2";
     try {
@@ -385,11 +390,7 @@ describe('FileCache', () => {
         [
           (result: unknown) => {
             const failures = result as Record<string, unknown>;
-            expect(failures[key]).toMatchObject({
-              code: "EINVALIDCACHE",
-              key,
-              message: "Found an invalid `cache file`.",
-            });
+            expect(failures).toBeUndefined();
           },
           async (_, cache: FileCache) => {
             // The cache file corresponding to key2 should have been deleted.
@@ -467,20 +468,25 @@ describe('FileCache', () => {
     }
   });
 
+  // IOエラーは、例外！！、そのテストに変更せよ。
   it("purge({ force: true }), unlinkSync error.", async () => {
     const key = "purge_unlinkSyncError";
     await testIOError(key, "purge_unlinkSyncError", 'unlinkSync', (_args: unknown[]) => {
       throw Object.assign(new Error("Error!"), { code: "EHOGE" });
-    }, null, async (cache: FileCache) => {
+    }, {
+        code: "ERR_IO_FAILED",
+        key,
+        message:"Failed to remove `cache file`."
+    }, async (cache: FileCache) => {
       await cache.set(key, 123456);
       const f = await cache.purge( { force: true });
       expect(f != null && f[key] !== undefined).toBeTruthy();
       expect((f as Record<string, unknown>)[key]).toMatchObject({
-        code: "EHOGE",
+        code: "ERR_IO_FAILED",
         key,
         message:"Failed to remove `cache file`."
       })
-    }, 2);
+    }, 0);
   });
 
   // statSync error test
@@ -499,7 +505,7 @@ describe('FileCache', () => {
           await cache.get(key);
         },
         {
-          code: "EINVALIDCACHE",
+          code: "ERR_FILECACHE",
           key,
           message: "Found an invalid `cache file`.",
           cause: {
@@ -514,6 +520,45 @@ describe('FileCache', () => {
       spy.mockRestore();
       try { fs.unlinkSync(getCacheFilePath(key)) } catch (_e) { ; }
     }
+  });
+
+  it("getAll: not found cache file.", async () => {
+    const key = 'getAll: not found cache file';
+    const cache = new FileCache();
+    await cache.set(key, key);
+    fs.unlinkSync(getCacheFilePath(key));
+    const all = await cache.getAll({ throwIfInvalid: true });
+    expect(Object.keys(all).length).toBe(0);
+  });
+
+  it("get->FileLock.withLock: unexpected error.", async () => {
+    const key = 'get->FileLock.withLock: unexpected error';
+    const spy = vi.spyOn(FileLock, 'withLock').mockImplementation(() => {
+      throw "###ERROR###";
+    })
+    const cache = new FileCache();
+    try {
+      await cache.get(key);
+    }
+    catch (err) {
+      expect(err).instanceOf(FileCacheError);
+      expect(err).toMatchObject({
+        cause: "###ERROR###",
+        code: "ERR_FILECACHE",
+        key,
+        message: "Failed to acquire the lock."
+      });
+    }
+    finally {
+      spy.mockRestore();
+    }
+  });
+
+  //remove
+  it("remove: not found cache file.", async () => {
+    const key = 'remove: not found cache file';
+    const cache = new FileCache();
+    expect(await cache.remove(key)).toBeUndefined();;
   });
 
 });
