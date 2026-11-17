@@ -5,7 +5,6 @@ import { FileCache, FileCacheError, type Config } from '../src/index.ts';
 import { FileLock } from '@ayapapa-npm/file-lock-js';
 import { DefaultLogger } from '../src/lib/DefaultLogger.ts';
 
-
 beforeEach(() => {
   vi.restoreAllMocks();
 });

@@ -29,7 +29,7 @@ Consequently, it allows for tasks such as temporarily caching the results of req
 
 ## Features
 
-- Lightweight (package size of approximately 10 KB).
+- Lightweight (package size of approximately 15 KB).
 - Easy to use; basic operations consist of `set` and `get`.
 - Associates keys with values ​​and stores them in files.
 - Uses the JSON file format, saving data as `key.json` files within a specified directory.

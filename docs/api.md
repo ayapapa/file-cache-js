@@ -13,6 +13,16 @@
 ## Interfaces
 
 - [Config](interfaces/Config.md)
+- [DefaultLoggerConfig](interfaces/DefaultLoggerConfig.md)
+
+## Type Aliases
+
+- [ErrorCode](type-aliases/ErrorCode.md)
+- [LogProvider](type-aliases/LogProvider.md)
+
+## Variables
+
+- [DefaultLogger](variables/DefaultLogger.md)
 
 ## References
 

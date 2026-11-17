@@ -1,9 +1,6 @@
-//import fs, { rmSync } from 'node:fs';
-//import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FileCache, /*type Config*/ } from '../src/index.ts';
+import { FileCache } from '../src/index.ts';
 import { sleepAsync } from '../src/lib/FileCache.ts';
-//import { getCacheDirPath, getCacheFilePath } from './TestCommon.ts';
 
 beforeEach(() => {
   vi.restoreAllMocks();

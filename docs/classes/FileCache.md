@@ -6,7 +6,7 @@
 
 # Class: FileCache
 
-Defined in: [src/lib/FileCache.ts:126](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L126)
+Defined in: [src/lib/FileCache.ts:139](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L139)
 
 A cache service class that uses files. 
 
@@ -27,7 +27,7 @@ and removing double quotation marks.
 
 > **new FileCache**(`config?`): `FileCache`
 
-Defined in: [src/lib/FileCache.ts:182](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L182)
+Defined in: [src/lib/FileCache.ts:199](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L199)
 
 Constructor.
 
@@ -49,11 +49,17 @@ If a null-like value (null or undefined) is provided, it is treated as if the va
 
 ### get()
 
-> **get**(`key`): `Promise`\<`unknown`\>
+> **get**\<`T`\>(`key`): `Promise`\<`T` \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:209](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L209)
+Defined in: [src/lib/FileCache.ts:226](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L226)
 
 Get the `cache value` corresponding to the `cache key`.
+
+#### Type Parameters
+
+##### T
+
+`T` = `unknown`
 
 #### Parameters
 
@@ -68,7 +74,7 @@ and removing double quotation marks.
 
 #### Returns
 
-`Promise`\<`unknown`\>
+`Promise`\<`T` \| `undefined`\>
 
 A promise that resolves to the `cache value' provided during 
 the `set` operation (or `undefined` if no `cache key' exists for the given 'cache key').
@@ -87,7 +93,7 @@ the `set` operation (or `undefined` if no `cache key' exists for the given 'cach
 
 > **getAll**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\>\>
 
-Defined in: [src/lib/FileCache.ts:227](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L227)
+Defined in: [src/lib/FileCache.ts:242](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L242)
 
 Get all `cache key`s and their corresponding `cache value`s. 
 Expired cache entries are listed with a value of `undefined`.
@@ -125,7 +131,7 @@ A promise that resolves to the retrieved `cache key`s and `cache value`s (in the
 
 > **getConfig**(): `Required`\<[`Config`](../interfaces/Config.md)\>
 
-Defined in: [src/lib/FileCache.ts:261](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L261)
+Defined in: [src/lib/FileCache.ts:277](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L277)
 
 Get the current configurations.
 
@@ -137,11 +143,29 @@ Copy of the current configurations.
 
 ***
 
+### has()
+
+> **has**(`key`): `boolean`
+
+Defined in: [src/lib/FileCache.ts:281](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L281)
+
+#### Parameters
+
+##### key
+
+`string`
+
+#### Returns
+
+`boolean`
+
+***
+
 ### purge()
 
 > **purge**(`options?`): `Promise`\<`Record`\<`string`, `unknown`\> \| `undefined`\>
 
-Defined in: [src/lib/FileCache.ts:274](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L274)
+Defined in: [src/lib/FileCache.ts:297](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L297)
 
 Perform a mass removal of the cash.
 
@@ -150,10 +174,15 @@ Perform a mass removal of the cash.
 ##### options?
 
 Options.
-- force: `boolean` — If `true`, deletes all cache files, including those identified as invalid. 
+- force: `boolean` — If `true`, remove all cache files, including those identified as invalid. 
+- throwIfInvalid: 
 Note that the determination of whether a cache file is "invalid" depends on the `removeInvalid` and `invalidTtlMs` settings in the `Config` object provided at instantiation. (See also `Config`.)
 
 ###### force?
+
+`boolean`
+
+###### throwIfInvalid?
 
 `boolean`
 
@@ -175,9 +204,9 @@ An object containing the keys that failed to be deleted and the reasons for the 
 
 ### remove()
 
-> **remove**(`key`): `Promise`\<`void`\>
+> **remove**(`key`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:314](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L314)
+Defined in: [src/lib/FileCache.ts:354](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L354)
 
 Remove the `cache file` corresponding to a given `cache key`. 
 If the `cache file` is considered invalid, it is deleted according to the `removeInvalid` 
@@ -190,6 +219,15 @@ and `invalidTtlMs` settings, resulting in either a return value of `undefined` o
 `string`
 
 `cache key`
+
+##### options?
+
+Options.
+- force: boolean If `true`, the `cache file` will be removed, even if it contains invalid data.
+
+###### force?
+
+`boolean`
 
 #### Returns
 
@@ -207,9 +245,9 @@ and `invalidTtlMs` settings, resulting in either a return value of `undefined` o
 
 ### set()
 
-> **set**(`key`, `value`, `options?`): `Promise`\<`void`\>
+> **set**\<`T`\>(`key`, `value`, `options?`): `Promise`\<`void`\>
 
-Defined in: [src/lib/FileCache.ts:344](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L344)
+Defined in: [src/lib/FileCache.ts:377](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L377)
 
 Store `cache key' and `cache value` ​​in a `cache file`. 
 If a `cache file` with the same 'cache key' already exists, it will be overwritten.
@@ -217,6 +255,12 @@ If a `cache file` with the same 'cache key' already exists, it will be overwritt
 If the specified `cache key` contains characters that are invalid for a file path, 
 it is converted into a valid file path by replacing those characters with underscores 
 and removing double quotation marks.
+
+#### Type Parameters
+
+##### T
+
+`T`
 
 #### Parameters
 
@@ -226,7 +270,7 @@ and removing double quotation marks.
 
 ##### value
 
-`unknown`
+`T`
 
 `cache value'
 The value must be of a type that can be converted to JSON. 
@@ -255,7 +299,7 @@ If a value of `0` or less is specified, there is no expiration.
 
 > `static` **getDefaultConf**(): [`Config`](../interfaces/Config.md)
 
-Defined in: [src/lib/FileCache.ts:152](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L152)
+Defined in: [src/lib/FileCache.ts:163](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L163)
 
 Static methods.
 

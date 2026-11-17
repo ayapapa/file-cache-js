@@ -6,7 +6,7 @@
 
 # Class: FileCacheError
 
-Defined in: [src/lib/FileCache.ts:680](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L680)
+Defined in: [src/lib/FileCache.ts:780](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L780)
 
 File cache error.
 
@@ -24,7 +24,7 @@ File cache error.
 
 > **new FileCacheError**(`msg`, `param?`): `FileCacheError`
 
-Defined in: [src/lib/FileCache.ts:686](https://github.com/ayapapa/file-cache-js/blob/bf2041a320903af0d24709fd2158acef3e36490f/src/lib/FileCache.ts#L686)
+Defined in: [src/lib/FileCache.ts:790](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L790)
 
 Constructor.
 
@@ -46,7 +46,7 @@ Parameters.
 
 ###### code
 
-`string`
+[`ErrorCode`](../type-aliases/ErrorCode.md)
 
 ###### key?
 
@@ -64,13 +64,29 @@ Parameters.
 
 ### cause?
 
-> `optional` **cause?**: `unknown`
+> `readonly` `optional` **cause?**: `unknown`
 
-Defined in: node\_modules/typescript/lib/lib.es2022.error.d.ts:26
+Defined in: [src/lib/FileCache.ts:781](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L781)
 
-#### Inherited from
+#### Overrides
 
 `Error.cause`
+
+***
+
+### code
+
+> `readonly` **code**: [`ErrorCode`](../type-aliases/ErrorCode.md) = `'ERR_FILECACHE'`
+
+Defined in: [src/lib/FileCache.ts:782](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L782)
+
+***
+
+### key?
+
+> `readonly` `optional` **key?**: `string`
+
+Defined in: [src/lib/FileCache.ts:783](https://github.com/ayapapa/file-cache-js/blob/bc4b4d41a1bd58a211da9bc4ce76a4a3b40c9021/src/lib/FileCache.ts#L783)
 
 ***
 
